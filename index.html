@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社労士日光街道すごろく</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo-950:#101d33; --indigo-900:#16243f; --indigo-800:#1e3358; --indigo-700:#28457a;
+    --indigo-500:#3d5f9e; --indigo-200:#c3d0e8;
+    --paper:#f1ead8; --paper-line:#d9cca4;
+    --vermillion:#c1442c; --vermillion-dark:#932f1c;
+    --gold:#c79a3e; --gold-soft:#e9d8ab;
+    --forward:#3d7a52; --forward-soft:#cfe6d6;
+    --back:#a0552f; --back-soft:#ecd7c4;
+    --ink:#20242c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(193,68,44,0.06), transparent 45%),
+      radial-gradient(circle at 90% 90%, rgba(61,95,158,0.08), transparent 40%),
+      var(--paper);
+    color:var(--ink); font-family:'Zen Kaku Gothic New', sans-serif; min-height:100vh;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:20px 16px 64px;}
+  .hero{
+    position:relative; background:linear-gradient(155deg, var(--indigo-950), var(--indigo-800) 70%);
+    border-radius:18px; padding:28px 24px 24px; color:#f4ecd8; overflow:hidden;
+    box-shadow:0 10px 30px -12px rgba(16,29,51,0.5);
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:radial-gradient(circle, rgba(233,216,171,0.10) 1.5px, transparent 1.5px);
+    background-size:16px 16px; opacity:0.5;
+  }
+  .hero-eyebrow{font-size:0.72rem; letter-spacing:0.16em; color:var(--gold-soft); font-weight:700; position:relative;}
+  .hero h1{font-family:'Shippori Mincho', serif; font-weight:800; font-size:1.8rem; margin:6px 0 4px; position:relative; line-height:1.35;}
+  .hero h1 span{color:var(--vermillion);}
+  .hero p.sub{margin:0; font-size:0.85rem; color:var(--indigo-200); position:relative;}
+  .hero .period{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; position:relative;}
+  .chip{background:rgba(244,236,216,0.08); border:1px solid rgba(244,236,216,0.25); border-radius:999px; padding:6px 14px; font-size:0.76rem; color:#f4ecd8;}
+  .chip b{color:var(--gold-soft);}
+  .status-card{
+    margin-top:16px; background:#fffdf7; border:1px solid var(--paper-line); border-radius:14px;
+    padding:18px 20px; display:flex; flex-wrap:wrap; gap:18px; align-items:center; justify-content:space-between;
+  }
+  .status-block{display:flex; flex-direction:column; gap:2px;}
+  .status-label{font-size:0.68rem; letter-spacing:0.08em; color:#8a7c5c; font-weight:700;}
+  .status-value{font-size:1.1rem; font-weight:900; color:var(--indigo-900); font-family:'Shippori Mincho',serif;}
+  .status-value.small{font-size:0.92rem;}
+  .avatar{width:38px;height:38px;border-radius:50%; display:flex;align-items:center;justify-content:center; color:#fff;font-weight:800;font-size:0.9rem; flex-shrink:0; box-shadow:inset 0 0 0 2px rgba(255,255,255,0.35);}
+  .who{display:flex; gap:10px; align-items:center;}
+  .btn{border:none; cursor:pointer; font-family:inherit; font-weight:700; border-radius:10px; padding:11px 18px; font-size:0.9rem; transition:transform .12s ease, opacity .12s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:0.42; cursor:not-allowed;}
+  .btn-main{background:linear-gradient(180deg, var(--vermillion), var(--vermillion-dark)); color:#fff8ee; box-shadow:0 6px 14px -6px rgba(147,47,28,0.6); font-size:1rem; padding:13px 26px;}
+  .btn-bonus{background:var(--indigo-800); color:#f1ead8;}
+  .btn-ghost{background:transparent; border:1px solid var(--paper-line); color:var(--indigo-800);}
+  .btn-small{padding:7px 12px; font-size:0.78rem; border-radius:8px;}
+  section.panel{margin-top:22px; background:#fffdf7; border:1px solid var(--paper-line); border-radius:14px; padding:20px;}
+  h2.panel-title{font-family:'Shippori Mincho', serif; font-size:1.05rem; margin:0 0 4px; color:var(--indigo-900); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  h2.panel-title .tag{font-size:0.65rem; background:var(--gold-soft); color:#6b5320; padding:2px 8px; border-radius:999px; font-family:'Zen Kaku Gothic New'; font-weight:700;}
+  p.panel-desc{font-size:0.8rem; color:#7c7360; margin:0 0 14px;}
+  .dice-zone{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+  .dice-face{width:64px;height:64px;border-radius:14px; background:#fff8ee; border:2px solid var(--indigo-800); display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:900; color:var(--indigo-900); box-shadow:3px 3px 0 var(--gold);}
+  .dice-face.rolling{animation:shake 0.5s ease;}
+  @keyframes shake{0%,100%{transform:rotate(0);} 25%{transform:rotate(-14deg) scale(1.05);} 50%{transform:rotate(10deg) scale(0.96);} 75%{transform:rotate(-8deg) scale(1.03);}}
+  .dice-msg{font-size:0.85rem; color:#5c5644;}
+  .bonus-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px;}
+  .bonus-item{background:var(--paper); border:1px solid var(--paper-line); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;}
+  .bonus-item .label{font-size:0.82rem; font-weight:700; color:var(--indigo-900); line-height:1.4;}
+  .bonus-item .amount{font-size:0.72rem; color:var(--vermillion-dark); font-weight:700;}
+
+  /* route strip */
+  .route-scroll{overflow-x:auto; padding-bottom:10px;}
+  .route{display:flex; align-items:flex-end; border-top:4px dashed var(--indigo-500); padding-top:10px; min-width:max-content;}
+  .wp{position:relative; display:flex; flex-direction:column; align-items:center; padding:0 1px;}
+  .wp.plain{width:7px;}
+  .wp.station, .wp.sidequest, .wp.special{width:54px;}
+  .wp-tokens{display:flex; flex-wrap:wrap; gap:2px; justify-content:center; min-height:20px; margin-bottom:2px; max-width:52px;}
+  .wp-token{width:16px;height:16px;border-radius:50%; color:#fff; font-size:0.45rem; font-weight:800; display:flex;align-items:center;justify-content:center; border:1.5px solid #fff8ee; box-shadow:0 1px 2px rgba(0,0,0,0.3);}
+  .wp-dot{width:6px;height:6px;border-radius:50%; background:var(--indigo-500); margin-top:-13px;}
+  .wp.station .wp-dot{width:16px;height:16px; background:#fff8ee; border:3px solid var(--indigo-700);}
+  .wp.station.goal .wp-dot{border-color:var(--vermillion); background:var(--gold-soft);}
+  .wp.sidequest .wp-dot{width:16px;height:16px; background:var(--gold-soft); border:3px solid var(--gold);}
+  .wp.special .wp-dot{width:14px;height:14px; border:3px solid var(--forward);}
+  .wp.special.back .wp-dot{border-color:var(--back);}
+  .wp-label{font-size:0.55rem; text-align:center; margin-top:4px; color:var(--indigo-900); line-height:1.25; font-weight:700; max-width:54px;}
+  .wp.sidequest .wp-label{color:#8a6a1a;}
+  .wp.special .wp-label{color:var(--forward);}
+  .wp.special.back .wp-label{color:var(--back);}
+  .start-end-label{font-size:0.7rem; color:#8a7c5c; font-weight:700; padding:0 8px 6px;}
+
+  table.rank{width:100%; border-collapse:collapse; font-size:0.85rem;}
+  table.rank th{text-align:left; font-size:0.68rem; color:#8a7c5c; letter-spacing:0.05em; padding:6px 8px; border-bottom:1px solid var(--paper-line);}
+  table.rank td{padding:9px 8px; border-bottom:1px solid #efe6cd;}
+  table.rank tr.me{background:rgba(193,68,44,0.06);}
+  .medal{font-size:0.9rem;}
+
+  .modal-backdrop{position:fixed; inset:0; background:rgba(16,20,30,0.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .modal-card{background:#fffaf0; border-radius:16px; max-width:420px; width:100%; padding:28px 24px 24px; position:relative; text-align:center; box-shadow:0 24px 60px -20px rgba(0,0,0,0.5);}
+  .stamp{width:88px; height:88px; border-radius:50%; border:5px solid var(--vermillion); color:var(--vermillion); display:flex; align-items:center; justify-content:center; font-family:'Shippori Mincho', serif; font-weight:800; font-size:0.9rem; margin:0 auto 14px; transform:rotate(-8deg) scale(0); animation:stampIn 0.45s cubic-bezier(.2,1.4,.4,1) forwards; animation-delay:0.15s;}
+  .stamp.side{border-color:var(--gold); color:#8a6a1a;}
+  .stamp.forward{border-color:var(--forward); color:var(--forward);}
+  .stamp.back{border-color:var(--back); color:var(--back);}
+  @keyframes stampIn{0%{transform:rotate(-8deg) scale(2.4); opacity:0;} 60%{opacity:1;} 100%{transform:rotate(-8deg) scale(1); opacity:1;}}
+  .modal-card h3{font-family:'Shippori Mincho', serif; margin:0 0 10px; color:var(--indigo-900);}
+  .modal-card p.quote{font-size:0.88rem; color:#4a4433; line-height:1.7; margin:0 0 14px;}
+  .modal-card p.note{font-size:0.68rem; color:#a99a72; margin:0 0 18px;}
+
+  .join-screen{max-width:420px; margin:60px auto; background:#fffdf7; border:1px solid var(--paper-line); border-radius:16px; padding:30px 26px; text-align:center;}
+  .join-screen h1{font-family:'Shippori Mincho', serif; color:var(--indigo-900); font-size:1.4rem; margin-bottom:6px;}
+  .join-screen p{font-size:0.82rem; color:#7c7360; margin-bottom:18px; line-height:1.6;}
+  .join-screen input{width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--paper-line); font-size:1rem; font-family:inherit; margin-bottom:12px; background:var(--paper);}
+  .join-screen .err{color:var(--vermillion-dark); font-size:0.78rem; margin:-6px 0 12px; min-height:1em;}
+  .warn-box{margin-top:16px; background:#fbf2e2; border:1px solid var(--gold-soft); border-radius:10px; padding:10px 12px; font-size:0.72rem; color:#7a5f22; text-align:left; line-height:1.6;}
+  .footer-note{margin-top:26px; font-size:0.7rem; color:#a99a72; text-align:center; line-height:1.7;}
+  .history-log{max-height:180px; overflow-y:auto; font-size:0.78rem; color:#5c5644;}
+  .history-log div{padding:5px 0; border-bottom:1px dashed #e6dcbf;}
+  .switch-user{font-size:0.7rem; color:#a99a72; text-decoration:underline; cursor:pointer; background:none; border:none; padding:0;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============ 基本設定 ============ */
+const CAMPAIGN_START = '2026-09-04';
+const CAMPAIGN_END   = '2027-03-31';
+
+const STATION_INFO = [
+  {name:'千住宿',   trivia:'日光街道最初の宿場。松尾芭蕉「おくのほそ道」の旅もここから始まったとか。'},
+  {name:'草加宿',   trivia:'松並木「草加松原」で知られる宿場町。せんべいの街としても有名。'},
+  {name:'越ヶ谷宿', trivia:'日光街道有数の規模を誇った宿場町。'},
+  {name:'粕壁宿',   trivia:'現在の春日部。旅人でにぎわった宿場。'},
+  {name:'杉戸宿',   trivia:'日光御成道にもほど近い、落ち着いた宿場。'},
+  {name:'幸手宿',   trivia:'桜の名所としても知られる宿場町。'},
+  {name:'栗橋宿',   trivia:'利根川の渡し場を控えた交通の要衝。'},
+  {name:'中田宿',   trivia:'利根川を渡った先、下総国最初の宿場。'},
+  {name:'古河宿',   trivia:'城下町としても栄えた宿場町。'},
+  {name:'野木宿',   trivia:'国境を越え、下野国に入って最初の宿場。'},
+  {name:'間々田宿', trivia:'こぶりながらも旅人の休息地として賑わった。'},
+  {name:'小山宿',   trivia:'日光街道有数の規模を持つ宿場町。'},
+  {name:'新田宿',   trivia:'喜沢追分にほど近い、静かな宿場。'},
+  {name:'小金井宿', trivia:'一里塚が今も残る宿場町。'},
+  {name:'石橋宿',   trivia:'静かな佇まいを残す宿場。'},
+  {name:'雀宮宿',   trivia:'宇都宮に近づく最後の小宿場。'},
+  {name:'宇都宮宿', trivia:'奥州街道との分岐点。餃子の街としても有名。'},
+  {name:'徳次郎宿', trivia:'日光連山を望む宿場。'},
+  {name:'大沢宿',   trivia:'日光まであと少し、旅の終盤の宿場町。'},
+  {name:'今市宿',   trivia:'会津西街道との分岐点。日光街道随一の賑わいを見せた。'},
+  {name:'鉢石宿',   trivia:'いよいよ日光東照宮のお膝元、旅の終点。'},
+];
+// 宿場の手前に置くマス数（毎日1回・約3か月でゴールするペースを想定して調整）
+const GAP_FILLERS = [20,20,18,22,14,10,20,4,10,12,10,12,8,10,10,14,14,22,18,20,14];
+
+// 寄り道マス（あとで自由に追加できます）
+const SIDEQUEST_DEFS = [
+  {afterGapIndex:0,  offsetInGap:2, name:'浅草（寄り道）', icon:'☕', trivia:'ちょっと寄り道。田心カフェで一息つきました。', isFiction:false},
+  {afterGapIndex:17, offsetInGap:3, name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', isFiction:true},
+];
+
+// 進む／戻るマス（全体でそれぞれ3つずつ）
+const SPECIAL_DEFS = [
+  {afterGapIndex:2,  offsetInGap:9,  kind:'forward'},
+  {afterGapIndex:9,  offsetInGap:6,  kind:'forward'},
+  {afterGapIndex:16, offsetInGap:7,  kind:'forward'},
+  {afterGapIndex:4,  offsetInGap:7,  kind:'back1'},
+  {afterGapIndex:11, offsetInGap:6,  kind:'back1'},
+  {afterGapIndex:18, offsetInGap:9,  kind:'back1'},
+  {afterGapIndex:6,  offsetInGap:10, kind:'back2'},
+  {afterGapIndex:13, offsetInGap:5,  kind:'back2'},
+  {afterGapIndex:19, offsetInGap:10, kind:'back2'},
+];
+
+const CLIENT_BONUS = [
+  {label:'スポット契約が決まった', amount:1},
+  {label:'顧問契約（月額5万円未満）が決まった', amount:2},
+  {label:'顧問契約（月額5万円以上10万円未満）が決まった', amount:3},
+  {label:'顧問契約（月額10万円以上）が決まった', amount:5},
+];
+const HOKKORI = [
+  '顧問先からお褒めの言葉をもらえた！',
+  '新しい仲間が事務所に入った',
+  '顧問先から仕事以外のお誘いがあった',
+  '事務所の近所で新しいつながりができた',
+  '顧問先との〇周年を迎えた',
+  '事務所スタッフのうれしい知らせを聞いた',
+  '事務所スタッフと楽しい時間をすごせた',
+];
+
+const DUMMY_QUOTES = [
+  '「一歩ずつでいい。歩き続けた者だけが宿場にたどり着く。」',
+  '「顧問先との信頼は、日々の小さな対応の積み重ねでできている。」',
+  '「忙しい時ほど、目の前の一件を丁寧に。」',
+  '「迷ったら、原点（開業した日の気持ち）に戻ってみるといい。」',
+  '「数字だけでなく、顧問先の"人"を見て仕事をしてきた。」',
+  '「若手のうちにたくさん失敗しておくといい。今の私がそうだった。」',
+  '「休むことも仕事のうち。倒れたら誰も助けられない。」',
+  '「一人でやらない。仲間や外部の力を頼っていい。」',
+  '「法改正は追いかけるものではなく、先回りするもの。」',
+  '「顧問先が本当に困っているのは、書類より次にどうするか。」',
+  '「小さな事務所だからこそ、小回りが強みになる。」',
+  '「断る勇気も、社労士としての誠実さの一つ。」',
+  '「継続は力なり。日光街道もこの一歩の先にある。」',
+  '「独立当初は不安だらけ。それでも続けてきたから今がある。」',
+  '「顧問先の"ありがとう"を励みに、今日も一件対応する。」',
+  '「専門知識より先に、まず話を聞くこと。」',
+  '「後進を育てることも、業界に恩返しする一つの形。」',
+  '「完璧を求めすぎず、まず動いてみる。」',
+  '「この業界は、人とのご縁で仕事が繋がっていく。」',
+  '「ゴールが見えてきても、最後まで丁寧に。」',
+  '「日光に着いたら、また新しい旅が始まる。」',
+];
+// ↑本文はすべて仮の文言です。後日、実際の先輩社労士のメッセージに差し替え予定。
+
+/* ============ 盤面の自動生成 ============ */
+let WAYPOINTS = []; // index 1..GOAL_POS
+(function buildBoard(){
+  let idx = 0;
+  for(let s=0; s<STATION_INFO.length; s++){
+    const fillers = GAP_FILLERS[s];
+    for(let f=0; f<fillers; f++){
+      idx++;
+      WAYPOINTS.push({pos:idx, type:'plain', gapIndex:s, offset:f});
+    }
+    idx++;
+    WAYPOINTS.push({pos:idx, type:'station', name:STATION_INFO[s].name, trivia:STATION_INFO[s].trivia, isGoal:(s===STATION_INFO.length-1), stationOrder:s});
+  }
+  SIDEQUEST_DEFS.forEach(sq=>{
+    const target = WAYPOINTS.find(w=>w.type==='plain' && w.gapIndex===sq.afterGapIndex && w.offset===sq.offsetInGap);
+    if(target){
+      target.type = 'sidequest';
+      target.name = sq.name; target.icon = sq.icon; target.trivia = sq.trivia; target.isFiction = sq.isFiction;
+    }
+  });
+  SPECIAL_DEFS.forEach(sp=>{
+    const target = WAYPOINTS.find(w=>w.type==='plain' && w.gapIndex===sp.afterGapIndex && w.offset===sp.offsetInGap);
+    if(target){
+      target.type = 'special';
+      target.kind = sp.kind; // 'forward' | 'back1' | 'back2'
+    }
+  });
+})();
+const GOAL_POS = WAYPOINTS[WAYPOINTS.length-1].pos;
+function wpAt(pos){ return WAYPOINTS.find(w=>w.pos===pos); }
+function stationPos(order){
+  if(order < 0) return 0;
+  const w = WAYPOINTS.find(w=>w.type==='station' && w.stationOrder===order);
+  return w ? w.pos : 0;
+}
+function stationLabel(pos){ if(pos<=0) return '日本橋'; const w=wpAt(pos); return (w && w.name) ? w.name : ('マス'+pos); }
+function specialTarget(w){
+  if(w.kind==='forward') return stationPos(w.gapIndex);
+  if(w.kind==='back1') return stationPos(w.gapIndex-1);
+  if(w.kind==='back2') return stationPos(w.gapIndex-2);
+  return w.pos;
+}
+
+const AVATAR_COLORS = ['#c1442c','#28457a','#3d7a52','#c79a3e','#7a4fa0','#1e8a8a','#a0552f','#5a6e2b'];
+function colorFor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))%AVATAR_COLORS.length; return AVATAR_COLORS[h]; }
+function initials(name){ return (name||'?').trim().slice(0,2); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function sha256Hex(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ============ 状態 ============ */
+// ここに、Apps Scriptをデプロイして得た「ウェブアプリのURL」を貼り付けてください。
+const API_URL = 'https://script.google.com/macros/s/AKfycbwoDBWMituHUT1Mu4PR3OXHXmMk4ZSg1caFoqkPUogr_Ac9WW9ZiEJm6YxZp6CKY6hd/exec';
+
+let ME = null;
+let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
+let ALL_PLAYERS = [];
+const app = document.getElementById('app');
+
+// JSONP方式でApps Scriptと通信（CORSの制約を受けないため確実に動く）
+function jsonpCall(params){
+  return new Promise((resolve)=>{
+    const cbName = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    let done = false;
+    const cleanup = ()=>{
+      try{ delete window[cbName]; }catch(e){}
+      const s = document.getElementById(cbName);
+      if(s && s.parentNode) s.parentNode.removeChild(s);
+    };
+    const timer = setTimeout(()=>{
+      if(!done){ done=true; cleanup(); resolve({ok:false, error:'timeout'}); }
+    }, 15000);
+    window[cbName] = function(data){
+      if(done) return;
+      done = true; clearTimeout(timer); cleanup();
+      resolve(data);
+    };
+    const qs = Object.keys(params).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(params[k]==null?'':params[k])).join('&');
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = API_URL + '?' + qs + '&callback=' + cbName;
+    script.onerror = function(){
+      if(done) return;
+      done = true; clearTimeout(timer); cleanup();
+      resolve({ok:false, error:'network'});
+    };
+    document.body.appendChild(script);
+  });
+}
+async function apiCall(action, payload){
+  return jsonpCall(Object.assign({action}, payload));
+}
+
+// nickname+passwordHashで参加登録／ログイン。失敗時は {ok:false, error:'bad_password'}
+async function apiJoin(nickname, passwordHash){
+  try{ return await apiCall('join', {nickname, passwordHash}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
+async function apiSave(p){
+  try{
+    const trimmedHistory = (p.history||[]).slice(-50); // URLが長くなりすぎないよう直近50件に絞る
+    return await apiCall('save', {
+      nickname:p.nickname, passwordHash:p.passwordHash, position:p.position,
+      lastRollDate:p.lastRollDate||'', arrivedAt:p.arrivedAt||'', history: JSON.stringify(trimmedHistory)
+    });
+  }catch(e){ return {ok:false, error:'network'}; }
+}
+async function loadAllPlayers(){
+  try{
+    const r = await apiCall('list', {});
+    return (r && r.ok) ? r.players : [];
+  }catch(e){ return []; }
+}
+
+/* ============ 参加画面（ニックネーム＋パスワード） ============ */
+function renderJoin(){
+  app.innerHTML = `
+    <div class="wrap">
+      <div class="join-screen">
+        <h1>社労士日光街道すごろく</h1>
+        <p>日本橋から日光まで、宿場と寄り道をめぐる長丁場のすごろくです。<br>ニックネームとパスワードを入力してください。初めての方はそのまま新規登録されます。</p>
+        <input id="nickInput" type="text" placeholder="ニックネーム（例：やはぎ）" maxlength="20">
+        <input id="passInput" type="password" placeholder="パスワード" maxlength="40">
+        <div class="err" id="joinErr"></div>
+        <button class="btn btn-main" style="width:100%" id="joinBtn">参加する / つづきから</button>
+        <div class="warn-box">
+          🔒 同じニックネームで記録を続けるには、最初に決めたパスワードが必要です。パスワードは簡易的なハッシュとして保存されますが、厳重なセキュリティ用途ではないのでご了承ください。忘れると別ニックネームで再登録が必要になります。
+        </div>
+      </div>
+    </div>
+  `;
+  const doJoin = ()=> join(document.getElementById('nickInput').value.trim(), document.getElementById('passInput').value);
+  document.getElementById('joinBtn').onclick = doJoin;
+  document.getElementById('passInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doJoin(); });
+}
+
+async function join(nickname, password){
+  const errEl = document.getElementById('joinErr');
+  if(!nickname){ errEl.textContent = 'ニックネームを入力してください'; return; }
+  if(!password){ errEl.textContent = 'パスワードを入力してください'; return; }
+  errEl.textContent = '';
+  app.innerHTML = `<div class="wrap"><p style="text-align:center;color:#8a7c5c;margin-top:80px;">読み込み中…</p></div>`;
+  const hash = await sha256Hex(password);
+  const r = await apiJoin(nickname, hash);
+  if(!r || !r.ok){
+    renderJoin();
+    document.getElementById('nickInput').value = nickname;
+    document.getElementById('joinErr').textContent =
+      (r && r.error==='bad_password') ? 'パスワードが違います。もう一度入力してください。' :
+      (r && r.error==='network') ? '通信に失敗しました。時間をおいて再度お試しください。' :
+      'エラーが発生しました。';
+    return;
+  }
+  ME = nickname;
+  PLAYER = Object.assign({}, r.player, {passwordHash: hash});
+  await refreshAll();
+  renderGame();
+}
+
+/* ============ 描画 ============ */
+async function refreshAll(){
+  // 盤面・ランキング表示用の簡易一覧（nickname/position/arrivedAtのみ）を取得。
+  // 自分自身の詳細な状態（PLAYER）はローカルの値をそのまま使う。
+  ALL_PLAYERS = await loadAllPlayers();
+}
+function campaignPhase(){
+  const t = todayStr();
+  if(t < CAMPAIGN_START) return 'before';
+  if(t > CAMPAIGN_END) return 'after';
+  return 'active';
+}
+function locationLabel(position){
+  if(position<=0) return '日本橋（出発前）';
+  const exact = wpAt(position);
+  if(exact && (exact.type==='station' || exact.type==='sidequest')) return (exact.icon?exact.icon+' ':'') + exact.name;
+  for(let p=position; p>=1; p--){
+    const w = wpAt(p);
+    if(w && (w.type==='station' || w.type==='sidequest')) return w.name + 'の少し先';
+  }
+  return '日本橋を出たところ';
+}
+
+function renderGame(){
+  const phase = campaignPhase();
+  const t = todayStr();
+  const rolledToday = PLAYER.lastRollDate === t;
+  const atGoal = PLAYER.position >= GOAL_POS;
+
+  let periodChip = '';
+  if(phase==='before') periodChip = `<span class="chip">開始まで <b>${daysBetween(t, CAMPAIGN_START)}日</b></span>`;
+  else if(phase==='active') periodChip = `<span class="chip">終了まで <b>${daysBetween(t, CAMPAIGN_END)}日</b></span>`;
+  else periodChip = `<span class="chip">第1期は終了しました</span>`;
+
+  app.innerHTML = `
+  <div class="wrap">
+    <div class="hero">
+      <div class="hero-eyebrow">社労士業界初！サムライコイン争奪</div>
+      <h1>社労士<span>日光街道</span>すごろく</h1>
+      <p class="sub">日本橋 → 21の宿場（全${GOAL_POS}マス）→ 日光東照宮。毎日1回のサイコロで、約3か月のゴールを目指します。</p>
+      <div class="period">
+        <span class="chip">開始 <b>2026/09/04</b></span>
+        <span class="chip">第1期終了 <b>2027/03/31</b></span>
+        ${periodChip}
+      </div>
+    </div>
+
+    <div class="status-card">
+      <div class="who">
+        <div class="avatar" style="background:${colorFor(ME)}">${initials(ME)}</div>
+        <div class="status-block">
+          <div class="status-label">プレイヤー</div>
+          <div class="status-value">${escapeHtml(ME)}</div>
+        </div>
+      </div>
+      <div class="status-block">
+        <div class="status-label">現在地</div>
+        <div class="status-value small">${atGoal ? '日光東照宮（ゴール！）' : locationLabel(PLAYER.position)}</div>
+      </div>
+      <div class="status-block">
+        <div class="status-label">マス目</div>
+        <div class="status-value small">${PLAYER.position} / ${GOAL_POS}</div>
+      </div>
+      <button class="btn btn-ghost btn-small" id="switchBtn">別のニックネームで参加</button>
+    </div>
+
+    ${phase==='before' ? `
+    <section class="panel">
+      <h2 class="panel-title">まだ開始前です</h2>
+      <p class="panel-desc">2026年9月4日からサイコロを振れるようになります。それまでにお友達を誘っておきましょう。</p>
+    </section>` : ''}
+
+    ${phase!=='before' ? `
+    <section class="panel">
+      <h2 class="panel-title">本日のサイコロ ${phase==='after' ? '<span class="tag">終了</span>' : ''}</h2>
+      <p class="panel-desc">1日1回、サイコロを振って先へ進めます（実際の日付で判定）。街道の途中には「近道（次の宿場まで一気に進む）」や「後退（宿場を1つ・2つ戻る）」のマスもあります。</p>
+      <div class="dice-zone">
+        <div class="dice-face" id="diceFace">?</div>
+        <button class="btn btn-main" id="rollMainBtn" ${(rolledToday || atGoal || phase==='after') ? 'disabled' : ''}>
+          ${atGoal ? 'ゴール済み' : rolledToday ? '本日は振り済み' : phase==='after' ? '受付終了' : 'サイコロを振る'}
+        </button>
+        <div class="dice-msg" id="diceMsg">${atGoal ? '日光東照宮に到着しています。お疲れさまでした！' : rolledToday ? '明日また挑戦できます。' : ''}</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">顧問先獲得ボーナス（自己申告）</h2>
+      <p class="panel-desc">獲得した契約に応じて、その場でボーナスサイコロを振ります（貯めておくことはできません）。</p>
+      <div class="bonus-grid">
+        ${CLIENT_BONUS.map((b,i)=>`
+          <div class="bonus-item">
+            <div class="label">${b.label}</div>
+            <div class="amount">サイコロ${b.amount}回をその場で振る</div>
+            <button class="btn btn-bonus btn-small" data-client="${i}" ${(phase==='after'||atGoal)?'disabled':''}>獲得しました</button>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">ほっこりボーナス（自己申告）</h2>
+      <p class="panel-desc">こんな出来事があったら、その場でサイコロ1回。何度でも申告OKです。</p>
+      <div class="bonus-grid">
+        ${HOKKORI.map((h,i)=>`
+          <div class="bonus-item">
+            <div class="label">${h}</div>
+            <div class="amount">サイコロ1回をその場で振る</div>
+            <button class="btn btn-bonus btn-small" data-hokkori="${i}" ${(phase==='after'||atGoal)?'disabled':''}>ありました</button>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+    ` : ''}
+
+    <section class="panel">
+      <h2 class="panel-title">街道マップ <span class="tag">全${GOAL_POS}マス／21宿＋寄り道＋近道/後退</span></h2>
+      <p class="panel-desc">🟢＝近道（次の宿場まで一気に進む）／🟠＝後退（宿場を1つ・2つ戻る）。横にスクロールできます。</p>
+      <div class="start-end-label">🏯 日本橋（出発）</div>
+      <div class="route-scroll">
+        <div class="route">
+          ${WAYPOINTS.map(w=>{
+            const here = ALL_PLAYERS.filter(p=>p.position===w.pos);
+            let cls, label;
+            if(w.type==='station'){ cls = 'station'+(w.isGoal?' goal':''); label = w.isGoal? '🏁'+w.name : w.name; }
+            else if(w.type==='sidequest'){ cls='sidequest'; label = w.icon+' '+w.name; }
+            else if(w.type==='special'){
+              cls = 'special' + (w.kind!=='forward' ? ' back' : '');
+              label = w.kind==='forward' ? '🟢近道' : (w.kind==='back1' ? '🟠戻(1)' : '🟠戻(2)');
+            } else { cls='plain'; label=''; }
+            return `<div class="wp ${cls}">
+              <div class="wp-tokens">${here.map(p=>`<div class="wp-token" style="background:${colorFor(p.nickname)}" title="${escapeHtml(p.nickname)}">${initials(p.nickname)}</div>`).join('')}</div>
+              <div class="wp-dot"></div>
+              ${label ? `<div class="wp-label">${label}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">参加者ランキング <span class="tag">${ALL_PLAYERS.length}名参加</span></h2>
+      <table class="rank">
+        <thead><tr><th>順位</th><th>ニックネーム</th><th>現在地</th></tr></thead>
+        <tbody>
+          ${rankPlayers(ALL_PLAYERS).map((p,i)=>`
+            <tr class="${p.nickname===ME?'me':''}">
+              <td><span class="medal">${medal(i)}</span></td>
+              <td>${escapeHtml(p.nickname)}</td>
+              <td>${p.position>=GOAL_POS ? '🏁 ゴール' + (p.arrivedAt ? '（'+p.arrivedAt.slice(0,10)+'）' : '') : locationLabel(p.position)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">自分の履歴</h2>
+      <div class="history-log">
+        ${PLAYER.history.slice().reverse().slice(0,40).map(h=>`<div>${h.date} — ${escapeHtml(h.text)}</div>`).join('') || '<div>まだ記録がありません。</div>'}
+      </div>
+    </section>
+
+    <div class="footer-note">
+      ※ 宿場・寄り道到着メッセージは仮の文言です。後日、実際の先輩社労士のメッセージ等に差し替え予定です。<br>
+      ※ 参加者の記録はニックネーム単位で全員から見える共有データとして保存されます（パスワードは簡易ハッシュ保存）。
+    </div>
+  </div>
+  `;
+
+  document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; renderJoin(); };
+  const rollMainBtn = document.getElementById('rollMainBtn');
+  if(rollMainBtn) rollMainBtn.onclick = rollMain;
+  document.querySelectorAll('[data-client]').forEach(btn=>{ btn.onclick = ()=> claimBonus(CLIENT_BONUS[parseInt(btn.dataset.client)].amount, CLIENT_BONUS[parseInt(btn.dataset.client)].label); });
+  document.querySelectorAll('[data-hokkori]').forEach(btn=>{ btn.onclick = ()=> claimBonus(1, 'ほっこり：'+HOKKORI[parseInt(btn.dataset.hokkori)]); });
+}
+
+function medal(i){ if(i===0) return '🥇'; if(i===1) return '🥈'; if(i===2) return '🥉'; return (i+1)+'位'; }
+function rankPlayers(list){
+  return list.slice().sort((a,b)=>{
+    const aG=a.position>=GOAL_POS, bG=b.position>=GOAL_POS;
+    if(aG && bG) return new Date(a.arrivedAt) - new Date(b.arrivedAt);
+    if(aG) return -1; if(bG) return 1;
+    return b.position - a.position;
+  });
+}
+
+/* ============ サイコロ処理 ============ */
+function animateDice(){
+  return new Promise(resolve=>{
+    const face = document.getElementById('diceFace');
+    if(!face){ resolve(); return; }
+    face.classList.add('rolling');
+    let n=0;
+    const iv = setInterval(()=>{ face.textContent = 1+Math.floor(Math.random()*6); n++; if(n>6){ clearInterval(iv); face.classList.remove('rolling'); resolve(); } }, 55);
+  });
+}
+
+async function rollMain(){
+  const t = todayStr();
+  if(PLAYER.lastRollDate === t || PLAYER.position>=GOAL_POS) return;
+  const btn = document.getElementById('rollMainBtn'); if(btn) btn.disabled = true;
+  await animateDice();
+  const roll = 1 + Math.floor(Math.random()*6);
+  PLAYER.lastRollDate = t;
+  const arrival = movePlayer(roll, `本日のサイコロで${roll}が出て、${roll}マス進んだ`);
+  await apiSave(PLAYER);
+  await refreshAll();
+  renderGame();
+  if(arrival) showArrivalModal(arrival);
+}
+
+async function claimBonus(diceCount, reasonLabel){
+  PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'claim', text:`${reasonLabel} → サイコロ${diceCount}回`});
+  const arrivals = [];
+  for(let i=0;i<diceCount;i++){
+    await animateDice();
+    const roll = 1 + Math.floor(Math.random()*6);
+    const arrival = movePlayer(roll, `（${reasonLabel}）ボーナスサイコロで${roll}が出て、${roll}マス進んだ`);
+    if(arrival) arrivals.push(arrival);
+    if(PLAYER.position>=GOAL_POS) break;
+  }
+  await apiSave(PLAYER);
+  await refreshAll();
+  renderGame();
+  showArrivalQueue(arrivals);
+}
+
+function movePlayer(roll, text){
+  const prevPos = PLAYER.position;
+  let newPos = Math.min(GOAL_POS, prevPos + roll);
+  PLAYER.position = newPos;
+  PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'move', text});
+
+  if(newPos <= prevPos) return null;
+
+  if(newPos >= GOAL_POS && !PLAYER.arrivedAt){
+    PLAYER.arrivedAt = new Date().toISOString();
+    return {type:'goal', name:'鉢石宿（日光東照宮）'};
+  }
+
+  const w = wpAt(newPos);
+  if(!w) return null;
+
+  if(w.type==='special'){
+    const target = specialTarget(w);
+    const fromLabel = stationLabel(newPos>0?newPos:0);
+    PLAYER.position = target;
+    PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'special', text:(w.kind==='forward'?'近道マスで':'後退マスで')+stationLabel(target)+'まで移動'});
+    if(target >= GOAL_POS && !PLAYER.arrivedAt){ PLAYER.arrivedAt = new Date().toISOString(); return {type:'goal', name:'鉢石宿（日光東照宮）'}; }
+    return {type:'special', kind:w.kind, targetName: stationLabel(target)};
+  }
+
+  if(w.type==='station' || w.type==='sidequest') return w;
+  return null;
+}
+
+function showArrivalQueue(list){
+  if(!list.length) return;
+  let i=0;
+  const showNext = ()=>{ if(i>=list.length) return; const w = list[i]; i++; showArrivalModal(w, showNext); };
+  showNext();
+}
+
+function showArrivalModal(w, onClose){
+  const isGoal = w.type==='goal' || w.isGoal;
+  const isSide = w.type==='sidequest';
+  const isSpecial = w.type==='special';
+  let quote, title, stampText, stampCls='';
+  if(isGoal){
+    title = '🎉 ゴール！日光東照宮に到着';
+    quote = '「日光東照宮、到着おめでとうございます。ここまでの道のり、お疲れさまでした。」<br><span style="font-size:0.7rem;color:#a99a72;">― 先輩社労士（仮）</span>';
+    stampText = '日光<br>到着';
+  } else if(isSpecial){
+    if(w.kind==='forward'){
+      title = '🐎 近道！一気に前進';
+      quote = `馬が疾走！次の宿場「${w.targetName}」まで一気に進みました。`;
+      stampText = '近道';
+      stampCls = 'forward';
+    } else {
+      const n = w.kind==='back1' ? 'ひとつ' : 'ふたつ';
+      title = '😮 足止め…後退';
+      quote = `事情があって、${n}前の宿場「${w.targetName}」まで戻ることになりました。`;
+      stampText = '後退';
+      stampCls = 'back';
+    }
+  } else if(isSide){
+    title = w.icon + ' ' + w.name;
+    quote = w.trivia;
+    stampText = '寄り道';
+    stampCls = 'side';
+  } else {
+    title = w.name + ' に到着';
+    const idx = (w.stationOrder!=null ? w.stationOrder : 0) % DUMMY_QUOTES.length;
+    quote = DUMMY_QUOTES[idx] + '<br><span style="font-size:0.7rem;color:#a99a72;">― 先輩社労士（仮）</span>';
+    stampText = '通過';
+  }
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <div class="stamp ${stampCls}">${stampText}</div>
+      <h3>${title}</h3>
+      <p class="quote">${quote}</p>
+      <p class="note">${isSide ? '※寄り道なので、次はこのマスから進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
+      <button class="btn btn-main" id="closeModalBtn">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('closeModalBtn').onclick = ()=>{ div.remove(); if(onClose) onClose(); };
+}
+
+/* ============ 起動 ============ */
+if(API_URL === 'YOUR_APPS_SCRIPT_URL_HERE'){
+  app.innerHTML = `
+    <div class="wrap">
+      <div class="join-screen">
+        <h1>設定が必要です</h1>
+        <p>このすごろくはGoogle Apps Script（スプレッドシート連携）にデータを保存する仕組みになっていますが、まだAPI_URLが設定されていません。<br><br>
+        コードの中の <code>const API_URL = 'YOUR_APPS_SCRIPT_URL_HERE';</code> の部分に、デプロイしたApps ScriptのウェブアプリURLを貼り付けてください。</p>
+      </div>
+    </div>`;
+} else {
+  renderJoin();
+}
+</script>
+</body>
+</html>
