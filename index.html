@@ -614,9 +614,9 @@ function renderJoin(){
 
 async function join(nickname, password){
   const errEl = document.getElementById('joinErr');
-  if(!nickname){ errEl.textContent = 'ニックネームを入力してください'; return; }
-  if(!password){ errEl.textContent = 'パスワードを入力してください'; return; }
-  errEl.textContent = '';
+  if(!nickname){ if(errEl) errEl.textContent = 'ニックネームを入力してください'; return; }
+  if(!password){ if(errEl) errEl.textContent = 'パスワードを入力してください'; return; }
+  if(errEl) errEl.textContent = '';
   app.innerHTML = `<div class="wrap"><p style="text-align:center;color:#8a7c5c;margin-top:80px;">読み込み中…</p></div>`;
   const hash = await sha256Hex(password);
   const r = await apiJoin(nickname, hash);
