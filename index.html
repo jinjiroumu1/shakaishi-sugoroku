@@ -78,6 +78,8 @@
 
   /* route strip */
   .route-scroll{overflow-x:auto; padding:18px 4px 14px;}
+  .map-wrap{width:100%; max-width:640px; margin:0 auto;}
+  .map-svg{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 6px 20px -8px rgba(16,29,51,0.35);}
   .route{
     position:relative; display:flex; align-items:flex-end; min-width:max-content;
     padding-top:14px;
@@ -276,6 +278,164 @@ function specialTarget(w){
 
 const AVATAR_COLORS = ['#c1442c','#28457a','#3d7a52','#c79a3e','#7a4fa0','#1e8a8a','#a0552f','#5a6e2b'];
 function colorFor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))%AVATAR_COLORS.length; return AVATAR_COLORS[h]; }
+
+/* ============ 絵地図（イラスト街道マップ）の構築 ============ */
+// 主要な立ち寄り先（日本橋・21宿・寄り道）だけを地図上の目印にする。
+// 近道/後退マスや細かいマスは内部のペース調整用で、地図には出さない。
+let MAP_NODES = [];
+(function buildMapNodes(){
+  MAP_NODES.push({type:'start', pos:0, name:'日本橋', icon:'🏯'});
+  WAYPOINTS.forEach(w=>{
+    if(w.type==='station' || w.type==='sidequest'){
+      MAP_NODES.push({
+        type: w.type,
+        pos: w.pos,
+        name: (w.type==='station' && w.isGoal) ? '鉢石宿・日光東照宮' : w.name,
+        icon: w.type==='station' ? (w.isGoal ? '⛩️' : w.icon) : w.icon,
+        isGoal: !!w.isGoal
+      });
+    }
+  });
+})();
+
+// 渦巻き状（外側→内側、時計回り）に配置。江戸時代の道中双六の「外周から中心のゴール絵へ」の構成を踏襲。
+const MAP_VB_W = 820, MAP_VB_H = 820;
+const MAP_CX = MAP_VB_W/2, MAP_CY = MAP_VB_H/2;
+const MAP_R_OUTER = 350, MAP_R_INNER = 60;
+const MAP_TOTAL_TURNS = 2.35;
+const N_NODES = MAP_NODES.length;
+MAP_NODES.forEach((n,i)=>{
+  const t = i/(N_NODES-1); // 0(出発・外側) → 1(ゴール・中心)
+  const r = MAP_R_OUTER - (MAP_R_OUTER-MAP_R_INNER)*t;
+  const theta = -Math.PI/2 + t*MAP_TOTAL_TURNS*2*Math.PI; // 12時位置スタート、時計回り
+  n.x = MAP_CX + r*Math.cos(theta);
+  n.y = MAP_CY + r*Math.sin(theta);
+});
+
+function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
+
+// Catmull-Romスプライン→ベジェ曲線に変換して、なめらかに曲がる道を作る
+function smoothPathD(points){
+  if(points.length<2) return '';
+  let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for(let i=0;i<points.length-1;i++){
+    const p0 = points[i===0?0:i-1];
+    const p1 = points[i];
+    const p2 = points[i+1];
+    const p3 = points[i+2>=points.length?points.length-1:i+2];
+    const c1x = p1.x + (p2.x-p0.x)/6, c1y = p1.y + (p2.y-p0.y)/6;
+    const c2x = p2.x - (p3.x-p1.x)/6, c2y = p2.y - (p3.y-p1.y)/6;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+function playerXY(position){
+  for(let i=0;i<MAP_NODES.length-1;i++){
+    const a=MAP_NODES[i], b=MAP_NODES[i+1];
+    if(position>=a.pos && position<=b.pos){
+      const frac = b.pos===a.pos ? 0 : (position-a.pos)/(b.pos-a.pos);
+      return {x:a.x+(b.x-a.x)*frac, y:a.y+(b.y-a.y)*frac};
+    }
+  }
+  const last = MAP_NODES[MAP_NODES.length-1];
+  return {x:last.x, y:last.y};
+}
+
+// 静的パーツ（地形・道・装飾・宿場バナー・ゴールパネル）は一度だけ組み立てて使い回す
+const MAP_TERRAIN_BANDS = [
+  {r:380, color:'#cddcb0'},
+  {r:300, color:'#e3d6a3'},
+  {r:220, color:'#bcd6d9'},
+  {r:140, color:'#e0c6ab'},
+];
+function buildMapStaticSVG(){
+  let terrain = `<rect x="0" y="0" width="${MAP_VB_W}" height="${MAP_VB_H}" fill="#f1ead8"/>`;
+  MAP_TERRAIN_BANDS.forEach(band=>{
+    terrain += `<circle cx="${MAP_CX}" cy="${MAP_CY}" r="${band.r}" fill="${band.color}" opacity="0.5"/>`;
+  });
+
+  // 渦の外側（四隅の余白）に、木や雲などの装飾を散らす
+  let deco = '';
+  const decoEmoji = ['🌳','🌲','🌸','🌼','☁️','🍃','⛰️','🐦'];
+  const corners = [{x:70,y:70},{x:750,y:70},{x:70,y:750},{x:750,y:750},{x:MAP_CX,y:40},{x:40,y:MAP_CY},{x:780,y:MAP_CY},{x:MAP_CX,y:790}];
+  corners.forEach((c,i)=>{
+    for(let k=0;k<3;k++){
+      const lateral = (seededRand(i*9+k*4)-0.5)*90;
+      const vert = (seededRand(i*6+k*2)-0.5)*90;
+      const emoji = decoEmoji[Math.floor(seededRand(i*17+k*23)*decoEmoji.length)];
+      const size = 20 + seededRand(i+k*3)*14;
+      deco += `<text x="${(c.x+lateral).toFixed(1)}" y="${(c.y+vert).toFixed(1)}" font-size="${size.toFixed(0)}" text-anchor="middle" opacity="0.85">${emoji}</text>`;
+    }
+  });
+
+  const roadD = smoothPathD(MAP_NODES);
+  const road = `
+    <path d="${roadD}" fill="none" stroke="#e9dcc0" stroke-width="26" stroke-linecap="round"/>
+    <path d="${roadD}" fill="none" stroke="#c9b183" stroke-width="20" stroke-linecap="round"/>
+    <path d="${roadD}" fill="none" stroke="#fff8ee" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round" opacity="0.8"/>
+  `;
+
+  let banners = '';
+  MAP_NODES.forEach((n,i)=>{
+    if(n.isGoal) return; // ゴールは中心パネルとして別途描画
+    const isStart = n.type==='start';
+    const isSide = n.type==='sidequest';
+    const fill = isSide ? 'var(--gold)' : isStart ? 'var(--indigo-900)' : 'var(--indigo-700)';
+    const bx = n.x, by = n.y;
+    banners += `
+      <g>
+        <circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="28" fill="#fff8ee" stroke="${fill}" stroke-width="4"/>
+        <text x="${bx.toFixed(1)}" y="${(by+7).toFixed(1)}" font-size="24" text-anchor="middle">${n.icon}</text>
+        <rect x="${(bx-52).toFixed(1)}" y="${(by+33).toFixed(1)}" width="104" height="22" rx="6" fill="${fill}"/>
+        <text x="${bx.toFixed(1)}" y="${(by+49).toFixed(1)}" font-size="11.5" font-weight="700" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(n.name)}</text>
+      </g>
+    `;
+  });
+
+  // 中心のゴールパネル（日光東照宮のイメージ）
+  const goalNode = MAP_NODES[MAP_NODES.length-1];
+  const gx = goalNode.x, gy = goalNode.y;
+  const goalPanel = `
+    <g>
+      <circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="86" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="6"/>
+      <circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="86" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="3 6"/>
+      <text x="${gx.toFixed(1)}" y="${(gy-20).toFixed(1)}" font-size="44" text-anchor="middle">⛩️</text>
+      <text x="${gx.toFixed(1)}" y="${(gy+18).toFixed(1)}" font-size="15" font-weight="800" text-anchor="middle" fill="var(--indigo-900)" font-family="'Shippori Mincho', serif">日光</text>
+      <text x="${gx.toFixed(1)}" y="${(gy+38).toFixed(1)}" font-size="12" font-weight="700" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">東照宮</text>
+      <g>
+        <ellipse cx="${(gx+108).toFixed(1)}" cy="${(gy-70).toFixed(1)}" rx="46" ry="26" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="2.5"/>
+        <text x="${(gx+108).toFixed(1)}" y="${(gy-65).toFixed(1)}" font-size="13" font-weight="800" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">到着〜！</text>
+      </g>
+    </g>
+  `;
+
+  return `<g class="map-terrain">${terrain}</g><g class="map-deco">${deco}</g><g class="map-road">${road}</g><g class="map-banners">${banners}</g><g class="map-goal">${goalPanel}</g>`;
+}
+let MAP_STATIC_SVG = null; // 初回描画時に一度だけ生成
+
+function buildMapTokensSVG(players){
+  const groups = {};
+  players.forEach(p=>{
+    const key = Math.round(playerXY(p.position).x)+','+Math.round(playerXY(p.position).y);
+    (groups[key] = groups[key] || []).push(p);
+  });
+  let svg = '';
+  Object.keys(groups).forEach(key=>{
+    const list = groups[key];
+    list.forEach((p,idx)=>{
+      const {x,y} = playerXY(p.position);
+      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 16 : 0;
+      svg += `
+        <g>
+          <circle cx="${(x+jitter).toFixed(1)}" cy="${(y-8).toFixed(1)}" r="11" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="2"/>
+          <text x="${(x+jitter).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="9" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
+        </g>
+      `;
+    });
+  });
+  return svg;
+}
 function initials(name){ return (name||'?').trim().slice(0,2); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
@@ -517,34 +677,16 @@ function renderGame(){
     ` : ''}
 
     <section class="panel">
-      <h2 class="panel-title">街道マップ <span class="tag">全${GOAL_POS}マス／21宿＋寄り道＋近道/後退</span></h2>
-      <p class="panel-desc">宿場印めぐり風に、宿場ごとのご当地アイコンを並べました。🟢＝近道（次の宿場まで一気に進む）／🟠＝後退（宿場を1つ・2つ戻る）。横にスクロールできます。</p>
-      <div class="start-end-label">🏯 日本橋（出発）</div>
-      <div class="route-scroll">
-        <div class="route">
-          ${WAYPOINTS.map(w=>{
-            const here = ALL_PLAYERS.filter(p=>p.position===w.pos);
-            let cls, badge, label;
-            if(w.type==='station'){
-              cls = 'station'+(w.isGoal?' goal':'');
-              badge = w.isGoal ? '⛩️' : w.icon;
-              label = w.isGoal? '🏁'+w.name : w.name;
-            } else if(w.type==='sidequest'){
-              cls='sidequest'; badge = w.icon; label = w.name;
-            } else if(w.type==='special'){
-              cls = 'special' + (w.kind!=='forward' ? ' back' : '');
-              badge = w.kind==='forward' ? '🐎' : '🌀';
-              label = w.kind==='forward' ? '近道' : (w.kind==='back1' ? '後退(1)' : '後退(2)');
-            } else { cls='plain'; badge=''; label=''; }
-            return `<div class="wp ${cls}">
-              <div class="wp-tokens">${here.map(p=>`<div class="wp-token" style="background:${colorFor(p.nickname)}" title="${escapeHtml(p.nickname)}">${initials(p.nickname)}</div>`).join('')}</div>
-              ${badge ? `<div class="wp-badge">${badge}</div>` : '<div class="wp-dot"></div>'}
-              ${label ? `<div class="wp-label">${label}</div>` : ''}
-            </div>`;
-          }).join('')}
-        </div>
+      <h2 class="panel-title">街道マップ <span class="tag">日本橋 → 21宿＋寄り道 → 日光</span></h2>
+      <p class="panel-desc">外側の日本橋から、渦を巻くように中心の日光を目指す絵地図です。丸いアイコンが宿場、金色は寄り道スポット。コマの位置は実際の進行度（${GOAL_POS}マス中）に応じて道の上を動きます。</p>
+      <div class="map-wrap">
+        <svg viewBox="0 0 ${MAP_VB_W} ${MAP_VB_H}" class="map-svg" xmlns="http://www.w3.org/2000/svg">
+          ${MAP_STATIC_SVG || (MAP_STATIC_SVG = buildMapStaticSVG())}
+          ${buildMapTokensSVG(ALL_PLAYERS)}
+        </svg>
       </div>
     </section>
+
 
     <section class="panel">
       <h2 class="panel-title">参加者ランキング <span class="tag">${ALL_PLAYERS.length}名参加</span></h2>
