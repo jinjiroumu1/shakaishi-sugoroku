@@ -79,6 +79,13 @@
   /* route strip */
   .route-scroll{overflow-x:auto; padding:18px 4px 14px;}
   .map-wrap{width:100%; max-width:640px; margin:0 auto;}
+  .map-svg{transition: none;}
+  .my-token-pulse{animation: mapPulse 1.6s ease-out infinite;}
+  @keyframes mapPulse{
+    0%{ r:15; opacity:0.9; }
+    100%{ r:32; opacity:0; }
+  }
+  .map-toolbar{display:flex; justify-content:center; margin-bottom:10px;}
   .map-svg{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 6px 20px -8px rgba(16,29,51,0.35);}
   .route{
     position:relative; display:flex; align-items:flex-end; min-width:max-content;
@@ -284,7 +291,7 @@ function colorFor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))%
 // 近道/後退マスや細かいマスは内部のペース調整用で、地図には出さない。
 let MAP_NODES = [];
 (function buildMapNodes(){
-  MAP_NODES.push({type:'start', pos:0, name:'日本橋', icon:'🏯'});
+  MAP_NODES.push({type:'start', pos:0, name:'日本橋', icon:'🏯', trivia:'すべての旅の出発点。ここから日光まで、宿場を数えて21。'});
   WAYPOINTS.forEach(w=>{
     if(w.type==='station' || w.type==='sidequest'){
       MAP_NODES.push({
@@ -292,6 +299,7 @@ let MAP_NODES = [];
         pos: w.pos,
         name: (w.type==='station' && w.isGoal) ? '鉢石宿・日光東照宮' : w.name,
         icon: w.type==='station' ? (w.isGoal ? '⛩️' : w.icon) : w.icon,
+        trivia: w.trivia || '',
         isGoal: !!w.isGoal
       });
     }
@@ -299,10 +307,10 @@ let MAP_NODES = [];
 })();
 
 // 渦巻き状（外側→内側、時計回り）に配置。江戸時代の道中双六の「外周から中心のゴール絵へ」の構成を踏襲。
-const MAP_VB_W = 820, MAP_VB_H = 820;
+const MAP_VB_W = 980, MAP_VB_H = 980;
 const MAP_CX = MAP_VB_W/2, MAP_CY = MAP_VB_H/2;
-const MAP_R_OUTER = 350, MAP_R_INNER = 60;
-const MAP_TOTAL_TURNS = 2.35;
+const MAP_R_OUTER = 420, MAP_R_INNER = 80;
+const MAP_TOTAL_TURNS = 2.05;
 const N_NODES = MAP_NODES.length;
 MAP_NODES.forEach((n,i)=>{
   const t = i/(N_NODES-1); // 0(出発・外側) → 1(ゴール・中心)
@@ -344,11 +352,12 @@ function playerXY(position){
 
 // 静的パーツ（地形・道・装飾・宿場バナー・ゴールパネル）は一度だけ組み立てて使い回す
 const MAP_TERRAIN_BANDS = [
-  {r:380, color:'#cddcb0'},
-  {r:300, color:'#e3d6a3'},
-  {r:220, color:'#bcd6d9'},
-  {r:140, color:'#e0c6ab'},
+  {r:450, color:'#cddcb0'},
+  {r:360, color:'#e3d6a3'},
+  {r:260, color:'#bcd6d9'},
+  {r:160, color:'#e0c6ab'},
 ];
+const MAP_PANEL_COLORS = ['#28457a','#3d7a52','#a0552f','#1e8a8a','#7a4fa0','#c1442c'];
 function buildMapStaticSVG(){
   let terrain = `<rect x="0" y="0" width="${MAP_VB_W}" height="${MAP_VB_H}" fill="#f1ead8"/>`;
   MAP_TERRAIN_BANDS.forEach(band=>{
@@ -358,37 +367,38 @@ function buildMapStaticSVG(){
   // 渦の外側（四隅の余白）に、木や雲などの装飾を散らす
   let deco = '';
   const decoEmoji = ['🌳','🌲','🌸','🌼','☁️','🍃','⛰️','🐦'];
-  const corners = [{x:70,y:70},{x:750,y:70},{x:70,y:750},{x:750,y:750},{x:MAP_CX,y:40},{x:40,y:MAP_CY},{x:780,y:MAP_CY},{x:MAP_CX,y:790}];
+  const corners = [{x:80,y:80},{x:900,y:80},{x:80,y:900},{x:900,y:900},{x:MAP_CX,y:35},{x:35,y:MAP_CY},{x:945,y:MAP_CY},{x:MAP_CX,y:945}];
   corners.forEach((c,i)=>{
     for(let k=0;k<3;k++){
-      const lateral = (seededRand(i*9+k*4)-0.5)*90;
-      const vert = (seededRand(i*6+k*2)-0.5)*90;
+      const lateral = (seededRand(i*9+k*4)-0.5)*100;
+      const vert = (seededRand(i*6+k*2)-0.5)*100;
       const emoji = decoEmoji[Math.floor(seededRand(i*17+k*23)*decoEmoji.length)];
-      const size = 20 + seededRand(i+k*3)*14;
+      const size = 22 + seededRand(i+k*3)*14;
       deco += `<text x="${(c.x+lateral).toFixed(1)}" y="${(c.y+vert).toFixed(1)}" font-size="${size.toFixed(0)}" text-anchor="middle" opacity="0.85">${emoji}</text>`;
     }
   });
 
   const roadD = smoothPathD(MAP_NODES);
   const road = `
-    <path d="${roadD}" fill="none" stroke="#e9dcc0" stroke-width="26" stroke-linecap="round"/>
-    <path d="${roadD}" fill="none" stroke="#c9b183" stroke-width="20" stroke-linecap="round"/>
+    <path d="${roadD}" fill="none" stroke="#e9dcc0" stroke-width="28" stroke-linecap="round"/>
+    <path d="${roadD}" fill="none" stroke="#c9b183" stroke-width="22" stroke-linecap="round"/>
     <path d="${roadD}" fill="none" stroke="#fff8ee" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round" opacity="0.8"/>
   `;
 
+  const PW = 94, PH = 94; // パネルの大きさ（New Yearすごろく風の四角パネル）
   let banners = '';
   MAP_NODES.forEach((n,i)=>{
     if(n.isGoal) return; // ゴールは中心パネルとして別途描画
     const isStart = n.type==='start';
     const isSide = n.type==='sidequest';
-    const fill = isSide ? 'var(--gold)' : isStart ? 'var(--indigo-900)' : 'var(--indigo-700)';
+    const fill = isSide ? 'var(--gold)' : isStart ? 'var(--indigo-900)' : MAP_PANEL_COLORS[i % MAP_PANEL_COLORS.length];
     const bx = n.x, by = n.y;
     banners += `
-      <g>
-        <circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="28" fill="#fff8ee" stroke="${fill}" stroke-width="4"/>
-        <text x="${bx.toFixed(1)}" y="${(by+7).toFixed(1)}" font-size="24" text-anchor="middle">${n.icon}</text>
-        <rect x="${(bx-52).toFixed(1)}" y="${(by+33).toFixed(1)}" width="104" height="22" rx="6" fill="${fill}"/>
-        <text x="${bx.toFixed(1)}" y="${(by+49).toFixed(1)}" font-size="11.5" font-weight="700" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(n.name)}</text>
+      <g class="map-node" onclick="showStationInfoModal(${i})" style="cursor:pointer;">
+        <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="16" fill="${fill}" stroke="#fff8ee" stroke-width="4"/>
+        <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="16" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+        <text x="${bx.toFixed(1)}" y="${(by-6).toFixed(1)}" font-size="34" text-anchor="middle">${n.icon}</text>
+        <text x="${bx.toFixed(1)}" y="${(by+30).toFixed(1)}" font-size="13" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(n.name)}</text>
       </g>
     `;
   });
@@ -396,16 +406,17 @@ function buildMapStaticSVG(){
   // 中心のゴールパネル（日光東照宮のイメージ）
   const goalNode = MAP_NODES[MAP_NODES.length-1];
   const gx = goalNode.x, gy = goalNode.y;
+  const GW = 170, GH = 170;
   const goalPanel = `
-    <g>
-      <circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="86" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="6"/>
-      <circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="86" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="3 6"/>
-      <text x="${gx.toFixed(1)}" y="${(gy-20).toFixed(1)}" font-size="44" text-anchor="middle">⛩️</text>
-      <text x="${gx.toFixed(1)}" y="${(gy+18).toFixed(1)}" font-size="15" font-weight="800" text-anchor="middle" fill="var(--indigo-900)" font-family="'Shippori Mincho', serif">日光</text>
-      <text x="${gx.toFixed(1)}" y="${(gy+38).toFixed(1)}" font-size="12" font-weight="700" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">東照宮</text>
+    <g class="map-node" onclick="showStationInfoModal(${MAP_NODES.length-1})" style="cursor:pointer;">
+      <rect x="${(gx-GW/2).toFixed(1)}" y="${(gy-GH/2).toFixed(1)}" width="${GW}" height="${GH}" rx="22" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="6"/>
+      <rect x="${(gx-GW/2+8).toFixed(1)}" y="${(gy-GH/2+8).toFixed(1)}" width="${GW-16}" height="${GH-16}" rx="16" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="3 6"/>
+      <text x="${gx.toFixed(1)}" y="${(gy-28).toFixed(1)}" font-size="56" text-anchor="middle">⛩️</text>
+      <text x="${gx.toFixed(1)}" y="${(gy+22).toFixed(1)}" font-size="19" font-weight="800" text-anchor="middle" fill="var(--indigo-900)" font-family="'Shippori Mincho', serif">日光</text>
+      <text x="${gx.toFixed(1)}" y="${(gy+46).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">東照宮</text>
       <g>
-        <ellipse cx="${(gx+108).toFixed(1)}" cy="${(gy-70).toFixed(1)}" rx="46" ry="26" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="2.5"/>
-        <text x="${(gx+108).toFixed(1)}" y="${(gy-65).toFixed(1)}" font-size="13" font-weight="800" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">到着〜！</text>
+        <ellipse cx="${(gx+130).toFixed(1)}" cy="${(gy-90).toFixed(1)}" rx="52" ry="28" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="2.5"/>
+        <text x="${(gx+130).toFixed(1)}" y="${(gy-84).toFixed(1)}" font-size="14" font-weight="800" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">到着〜！</text>
       </g>
     </g>
   `;
@@ -413,6 +424,23 @@ function buildMapStaticSVG(){
   return `<g class="map-terrain">${terrain}</g><g class="map-deco">${deco}</g><g class="map-road">${road}</g><g class="map-banners">${banners}</g><g class="map-goal">${goalPanel}</g>`;
 }
 let MAP_STATIC_SVG = null; // 初回描画時に一度だけ生成
+
+function showStationInfoModal(i){
+  const n = MAP_NODES[i];
+  if(!n) return;
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <div class="stamp" style="border-color:${n.isGoal?'var(--vermillion)':n.type==='sidequest'?'var(--gold)':'var(--indigo-700)'}; color:${n.isGoal?'var(--vermillion)':n.type==='sidequest'?'#8a6a1a':'var(--indigo-700)'};">${n.icon}</div>
+      <h3>${escapeHtml(n.name)}</h3>
+      <p class="quote">${escapeHtml(n.trivia || '')}</p>
+      <button class="btn btn-main" id="closeStationModalBtn">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('closeStationModalBtn').onclick = ()=> div.remove();
+}
 
 function buildMapTokensSVG(players){
   const groups = {};
@@ -423,15 +451,32 @@ function buildMapTokensSVG(players){
   let svg = '';
   Object.keys(groups).forEach(key=>{
     const list = groups[key];
+    // 自分がいるグループなら自分を先頭に（重なったとき手前に見えるように）
+    list.sort((a,b)=> (a.nickname===ME?-1:0) - (b.nickname===ME?-1:0));
     list.forEach((p,idx)=>{
       const {x,y} = playerXY(p.position);
-      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 16 : 0;
-      svg += `
-        <g>
-          <circle cx="${(x+jitter).toFixed(1)}" cy="${(y-8).toFixed(1)}" r="11" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="2"/>
-          <text x="${(x+jitter).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="9" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
-        </g>
-      `;
+      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 18 : 0;
+      const isMe = p.nickname===ME;
+      const tx = x+jitter, ty = y-8;
+      if(isMe){
+        svg += `
+          <g class="my-token-marker">
+            <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="20" fill="none" stroke="var(--vermillion)" stroke-width="3" class="my-token-pulse"/>
+            <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="15" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="3"/>
+            <text x="${tx.toFixed(1)}" y="${(ty+4.5).toFixed(1)}" font-size="12" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
+            <text x="${tx.toFixed(1)}" y="${(ty-28).toFixed(1)}" font-size="15" text-anchor="middle">👇</text>
+            <rect x="${(tx-34).toFixed(1)}" y="${(ty-52).toFixed(1)}" width="68" height="22" rx="11" fill="var(--vermillion)"/>
+            <text x="${tx.toFixed(1)}" y="${(ty-37).toFixed(1)}" font-size="12" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
+          </g>
+        `;
+      } else {
+        svg += `
+          <g>
+            <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="11" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="2"/>
+            <text x="${tx.toFixed(1)}" y="${(ty+3.5).toFixed(1)}" font-size="9" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
+          </g>
+        `;
+      }
     });
   });
   return svg;
@@ -453,7 +498,17 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwoDBWMituHUT1Mu4PR3OXH
 let ME = null;
 let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
 let ALL_PLAYERS = [];
+let MAP_ZOOMED = false; // 「自分の位置にフォーカス」表示中かどうか
 const app = document.getElementById('app');
+
+function mapViewBox(){
+  if(!MAP_ZOOMED || !PLAYER) return `0 0 ${MAP_VB_W} ${MAP_VB_H}`;
+  const size = 340;
+  const {x,y} = playerXY(PLAYER.position);
+  const cx = Math.min(Math.max(x, size/2), MAP_VB_W - size/2);
+  const cy = Math.min(Math.max(y, size/2), MAP_VB_H - size/2);
+  return `${(cx-size/2).toFixed(1)} ${(cy-size/2).toFixed(1)} ${size} ${size}`;
+}
 
 // JSONP方式でApps Scriptと通信（CORSの制約を受けないため確実に動く）
 function jsonpCall(params){
@@ -678,9 +733,12 @@ function renderGame(){
 
     <section class="panel">
       <h2 class="panel-title">街道マップ <span class="tag">日本橋 → 21宿＋寄り道 → 日光</span></h2>
-      <p class="panel-desc">外側の日本橋から、渦を巻くように中心の日光を目指す絵地図です。丸いアイコンが宿場、金色は寄り道スポット。コマの位置は実際の進行度（${GOAL_POS}マス中）に応じて道の上を動きます。</p>
+      <p class="panel-desc">外側の日本橋から、渦を巻くように中心の日光を目指す絵地図です。パネルをタップすると宿場の説明が見られます。自分のコマは光る輪と「👇あなた」で表示されます。</p>
+      <div class="map-toolbar">
+        <button class="btn btn-ghost btn-small" id="mapZoomBtn">${MAP_ZOOMED ? '🗺 全体表示に戻す' : '🔍 自分の位置にフォーカス'}</button>
+      </div>
       <div class="map-wrap">
-        <svg viewBox="0 0 ${MAP_VB_W} ${MAP_VB_H}" class="map-svg" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="${mapViewBox()}" class="map-svg" xmlns="http://www.w3.org/2000/svg">
           ${MAP_STATIC_SVG || (MAP_STATIC_SVG = buildMapStaticSVG())}
           ${buildMapTokensSVG(ALL_PLAYERS)}
         </svg>
@@ -719,6 +777,8 @@ function renderGame(){
   `;
 
   document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; renderJoin(); };
+  const mapZoomBtn = document.getElementById('mapZoomBtn');
+  if(mapZoomBtn) mapZoomBtn.onclick = ()=>{ MAP_ZOOMED = !MAP_ZOOMED; renderGame(); };
   const rollMainBtn = document.getElementById('rollMainBtn');
   if(rollMainBtn) rollMainBtn.onclick = rollMain;
   document.querySelectorAll('[data-client]').forEach(btn=>{ btn.onclick = ()=> claimBonus(CLIENT_BONUS[parseInt(btn.dataset.client)].amount, CLIENT_BONUS[parseInt(btn.dataset.client)].label); });
