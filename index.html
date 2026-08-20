@@ -86,6 +86,25 @@
     100%{ r:32; opacity:0; }
   }
   .map-toolbar{display:flex; justify-content:center; margin-bottom:10px;}
+
+  /* 常時画面右側に固定表示されるサイコロ（ボーナス申告時などスクロール位置に関わらず見える） */
+  .dice-float{
+    position:fixed; right:14px; top:50%; transform:translateY(-50%) scale(0.7);
+    z-index:60; opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease;
+  }
+  .dice-float.show{ opacity:1; transform:translateY(-50%) scale(1); }
+  .dice-face-float{
+    width:64px; height:64px; border-radius:16px;
+    background:#fff8ee; border:3px solid var(--indigo-800);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.7rem; font-weight:900; color:var(--indigo-900);
+    box-shadow:0 8px 24px -6px rgba(16,29,51,0.55), 3px 3px 0 var(--gold);
+  }
+  .dice-face-float.rolling{animation: shake 0.5s ease infinite;}
+  @media (max-width:640px){
+    .dice-float{ right:8px; top:auto; bottom:90px; transform:scale(0.7); }
+    .dice-float.show{ transform:scale(0.92); }
+  }
   .map-svg{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 6px 20px -8px rgba(16,29,51,0.35);}
   .route{
     position:relative; display:flex; align-items:flex-end; min-width:max-content;
@@ -306,18 +325,20 @@ let MAP_NODES = [];
   });
 })();
 
-// 渦巻き状（外側→内側、時計回り）に配置。江戸時代の道中双六の「外周から中心のゴール絵へ」の構成を踏襲。
-const MAP_VB_W = 980, MAP_VB_H = 980;
-const MAP_CX = MAP_VB_W/2, MAP_CY = MAP_VB_H/2;
-const MAP_R_OUTER = 420, MAP_R_INNER = 80;
-const MAP_TOTAL_TURNS = 2.05;
+// ジグザグ格子状（New Yearすごろく風）に配置。左上スタート→行ごとに折り返しながらゴールへ。
+const MAP_COLS = 5;
 const N_NODES = MAP_NODES.length;
+const MAP_ROWS = Math.ceil(N_NODES / MAP_COLS);
+const MAP_CELL_W = 168, MAP_CELL_H = 190;
+const MAP_PAD_X = 76, MAP_PAD_Y = 90;
+const MAP_VB_W = MAP_PAD_X*2 + (MAP_COLS-1)*MAP_CELL_W;
+const MAP_VB_H = MAP_PAD_Y*2 + (MAP_ROWS-1)*MAP_CELL_H;
 MAP_NODES.forEach((n,i)=>{
-  const t = i/(N_NODES-1); // 0(出発・外側) → 1(ゴール・中心)
-  const r = MAP_R_OUTER - (MAP_R_OUTER-MAP_R_INNER)*t;
-  const theta = -Math.PI/2 + t*MAP_TOTAL_TURNS*2*Math.PI; // 12時位置スタート、時計回り
-  n.x = MAP_CX + r*Math.cos(theta);
-  n.y = MAP_CY + r*Math.sin(theta);
+  const row = Math.floor(i / MAP_COLS);
+  const posInRow = i % MAP_COLS;
+  const col = (row % 2 === 0) ? posInRow : (MAP_COLS - 1 - posInRow); // 偶数行→右へ、奇数行→左へ
+  n.x = MAP_PAD_X + col*MAP_CELL_W;
+  n.y = MAP_PAD_Y + row*MAP_CELL_H;
 });
 
 function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
@@ -351,31 +372,35 @@ function playerXY(position){
 }
 
 // 静的パーツ（地形・道・装飾・宿場バナー・ゴールパネル）は一度だけ組み立てて使い回す
-const MAP_TERRAIN_BANDS = [
-  {r:450, color:'#cddcb0'},
-  {r:360, color:'#e3d6a3'},
-  {r:260, color:'#bcd6d9'},
-  {r:160, color:'#e0c6ab'},
-];
+const MAP_TERRAIN_COLORS = ['#cddcb0','#e3d6a3','#bcd6d9','#e0c6ab','#cfd9b8'];
 const MAP_PANEL_COLORS = ['#28457a','#3d7a52','#a0552f','#1e8a8a','#7a4fa0','#c1442c'];
 function buildMapStaticSVG(){
   let terrain = `<rect x="0" y="0" width="${MAP_VB_W}" height="${MAP_VB_H}" fill="#f1ead8"/>`;
-  MAP_TERRAIN_BANDS.forEach(band=>{
-    terrain += `<circle cx="${MAP_CX}" cy="${MAP_CY}" r="${band.r}" fill="${band.color}" opacity="0.5"/>`;
-  });
+  // 行ごとに背景を軽く塗り分けて、迷路のようなブロック感を出す
+  for(let row=0; row<MAP_ROWS; row++){
+    const color = MAP_TERRAIN_COLORS[row % MAP_TERRAIN_COLORS.length];
+    const y = MAP_PAD_Y + row*MAP_CELL_H;
+    terrain += `<rect x="${(MAP_PAD_X-90).toFixed(1)}" y="${(y-MAP_CELL_H/2+10).toFixed(1)}" width="${(MAP_VB_W-MAP_PAD_X*2+180).toFixed(1)}" height="${(MAP_CELL_H-20).toFixed(1)}" rx="26" fill="${color}" opacity="0.45"/>`;
+  }
 
-  // 渦の外側（四隅の余白）に、木や雲などの装飾を散らす
+  // 外周の余白に、木や花などの装飾を散らす
   let deco = '';
   const decoEmoji = ['🌳','🌲','🌸','🌼','☁️','🍃','⛰️','🐦'];
-  const corners = [{x:80,y:80},{x:900,y:80},{x:80,y:900},{x:900,y:900},{x:MAP_CX,y:35},{x:35,y:MAP_CY},{x:945,y:MAP_CY},{x:MAP_CX,y:945}];
-  corners.forEach((c,i)=>{
-    for(let k=0;k<3;k++){
-      const lateral = (seededRand(i*9+k*4)-0.5)*100;
-      const vert = (seededRand(i*6+k*2)-0.5)*100;
-      const emoji = decoEmoji[Math.floor(seededRand(i*17+k*23)*decoEmoji.length)];
-      const size = 22 + seededRand(i+k*3)*14;
-      deco += `<text x="${(c.x+lateral).toFixed(1)}" y="${(c.y+vert).toFixed(1)}" font-size="${size.toFixed(0)}" text-anchor="middle" opacity="0.85">${emoji}</text>`;
-    }
+  const decoSpots = [];
+  for(let row=0; row<MAP_ROWS; row++){
+    decoSpots.push({x:MAP_PAD_X-52, y:MAP_PAD_Y+row*MAP_CELL_H});
+    decoSpots.push({x:MAP_VB_W-MAP_PAD_X+52, y:MAP_PAD_Y+row*MAP_CELL_H});
+  }
+  for(let col=0; col<MAP_COLS; col++){
+    decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:MAP_PAD_Y-58});
+    decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:MAP_VB_H-MAP_PAD_Y+58});
+  }
+  decoSpots.forEach((c,i)=>{
+    const lateral = (seededRand(i*9+2)-0.5)*40;
+    const vert = (seededRand(i*6+5)-0.5)*40;
+    const emoji = decoEmoji[Math.floor(seededRand(i*17+3)*decoEmoji.length)];
+    const size = 22 + seededRand(i+1)*14;
+    deco += `<text x="${(c.x+lateral).toFixed(1)}" y="${(c.y+vert).toFixed(1)}" font-size="${size.toFixed(0)}" text-anchor="middle" opacity="0.85">${emoji}</text>`;
   });
 
   const roadD = smoothPathD(MAP_NODES);
@@ -651,6 +676,9 @@ function renderGame(){
   if(TEST_MODE) periodChip += `<span class="chip" style="background:rgba(193,68,44,0.35);border-color:rgba(193,68,44,0.6);">⚠ テストモード中</span>`;
 
   app.innerHTML = `
+  <div class="dice-float" id="diceFloat">
+    <div class="dice-face-float" id="diceFaceFloat">🎲</div>
+  </div>
   <div class="wrap">
     <div class="hero">
       <div class="hero-travelers">🧑‍🦱🎒</div>
@@ -799,10 +827,25 @@ function rankPlayers(list){
 function animateDice(){
   return new Promise(resolve=>{
     const face = document.getElementById('diceFace');
-    if(!face){ resolve(); return; }
-    face.classList.add('rolling');
+    const floatWrap = document.getElementById('diceFloat');
+    const floatFace = document.getElementById('diceFaceFloat');
+    if(floatWrap) floatWrap.classList.add('show');
+    if(face) face.classList.add('rolling');
+    if(floatFace) floatFace.classList.add('rolling');
     let n=0;
-    const iv = setInterval(()=>{ face.textContent = 1+Math.floor(Math.random()*6); n++; if(n>6){ clearInterval(iv); face.classList.remove('rolling'); resolve(); } }, 55);
+    const iv = setInterval(()=>{
+      const v = 1+Math.floor(Math.random()*6);
+      if(face) face.textContent = v;
+      if(floatFace) floatFace.textContent = v;
+      n++;
+      if(n>6){
+        clearInterval(iv);
+        if(face) face.classList.remove('rolling');
+        if(floatFace) floatFace.classList.remove('rolling');
+        resolve();
+        setTimeout(()=>{ if(floatWrap) floatWrap.classList.remove('show'); }, 1500);
+      }
+    }, 55);
   });
 }
 
@@ -921,6 +964,12 @@ function showArrivalModal(w, onClose){
 }
 
 /* ============ 起動 ============ */
+// テスト中はtrueにしておくと、ログイン画面を出さず自動で参加します。
+// 他の人に試してもらう・本番公開する前に必ずfalseへ戻してください。
+const AUTO_LOGIN_TEST = true;
+const AUTO_LOGIN_NICKNAME = 'テスト';
+const AUTO_LOGIN_PASSWORD = 'test1234';
+
 if(API_URL === 'YOUR_APPS_SCRIPT_URL_HERE'){
   app.innerHTML = `
     <div class="wrap">
@@ -930,6 +979,8 @@ if(API_URL === 'YOUR_APPS_SCRIPT_URL_HERE'){
         コードの中の <code>const API_URL = 'YOUR_APPS_SCRIPT_URL_HERE';</code> の部分に、デプロイしたApps ScriptのウェブアプリURLを貼り付けてください。</p>
       </div>
     </div>`;
+} else if(AUTO_LOGIN_TEST){
+  join(AUTO_LOGIN_NICKNAME, AUTO_LOGIN_PASSWORD);
 } else {
   renderJoin();
 }
