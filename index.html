@@ -87,23 +87,32 @@
   }
   .map-toolbar{display:flex; justify-content:center; margin-bottom:10px;}
 
-  /* 常時画面右側に固定表示されるサイコロ（ボーナス申告時などスクロール位置に関わらず見える） */
+  /* 「サイコロを振る」ボタンごと、画面右側に常時固定表示するパネル */
   .dice-float{
-    position:fixed; right:14px; top:50%; transform:translateY(-50%) scale(0.7);
-    z-index:60; opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease;
+    position:fixed; right:16px; top:50%; transform:translateY(-50%);
+    z-index:60; display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:#fff8ee; border:2px solid var(--indigo-800); border-radius:16px;
+    padding:12px 10px; box-shadow:0 10px 26px -8px rgba(16,29,51,0.5);
   }
-  .dice-float.show{ opacity:1; transform:translateY(-50%) scale(1); }
+  .dice-float.hidden{display:none;}
   .dice-face-float{
-    width:64px; height:64px; border-radius:16px;
-    background:#fff8ee; border:3px solid var(--indigo-800);
+    width:52px; height:52px; border-radius:12px;
+    background:var(--paper); border:2px solid var(--indigo-800);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.7rem; font-weight:900; color:var(--indigo-900);
-    box-shadow:0 8px 24px -6px rgba(16,29,51,0.55), 3px 3px 0 var(--gold);
+    font-size:1.4rem; font-weight:900; color:var(--indigo-900);
   }
   .dice-face-float.rolling{animation: shake 0.5s ease infinite;}
+  .dice-float-btn{
+    writing-mode:vertical-rl; text-orientation:mixed;
+    background:linear-gradient(180deg, var(--vermillion), var(--vermillion-dark)); color:#fff8ee;
+    border:none; border-radius:10px; padding:10px 8px; font-weight:700; font-size:0.8rem;
+    cursor:pointer; letter-spacing:0.05em;
+  }
+  .dice-float-btn:disabled{opacity:0.4; cursor:not-allowed;}
   @media (max-width:640px){
-    .dice-float{ right:8px; top:auto; bottom:90px; transform:scale(0.7); }
-    .dice-float.show{ transform:scale(0.92); }
+    .dice-float{ right:8px; top:auto; bottom:16px; flex-direction:row; padding:8px; }
+    .dice-float-btn{ writing-mode:horizontal-tb; padding:10px 14px; font-size:0.78rem; }
+    .dice-face-float{ width:44px; height:44px; font-size:1.2rem; }
   }
   .map-svg{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 6px 20px -8px rgba(16,29,51,0.35);}
   .route{
@@ -676,8 +685,11 @@ function renderGame(){
   if(TEST_MODE) periodChip += `<span class="chip" style="background:rgba(193,68,44,0.35);border-color:rgba(193,68,44,0.6);">⚠ テストモード中</span>`;
 
   app.innerHTML = `
-  <div class="dice-float" id="diceFloat">
-    <div class="dice-face-float" id="diceFaceFloat">🎲</div>
+  <div class="dice-float ${(phase==='before') ? 'hidden' : ''}" id="diceFloat">
+    <div class="dice-face-float" id="diceFaceFloat">?</div>
+    <button class="dice-float-btn" id="rollMainBtnFloat" ${(rolledToday || atGoal || phase==='after') ? 'disabled' : ''}>
+      ${atGoal ? '達成' : rolledToday ? '振済み' : phase==='after' ? '終了' : 'サイコロを振る'}
+    </button>
   </div>
   <div class="wrap">
     <div class="hero">
@@ -809,6 +821,8 @@ function renderGame(){
   if(mapZoomBtn) mapZoomBtn.onclick = ()=>{ MAP_ZOOMED = !MAP_ZOOMED; renderGame(); };
   const rollMainBtn = document.getElementById('rollMainBtn');
   if(rollMainBtn) rollMainBtn.onclick = rollMain;
+  const rollMainBtnFloat = document.getElementById('rollMainBtnFloat');
+  if(rollMainBtnFloat) rollMainBtnFloat.onclick = rollMain;
   document.querySelectorAll('[data-client]').forEach(btn=>{ btn.onclick = ()=> claimBonus(CLIENT_BONUS[parseInt(btn.dataset.client)].amount, CLIENT_BONUS[parseInt(btn.dataset.client)].label); });
   document.querySelectorAll('[data-hokkori]').forEach(btn=>{ btn.onclick = ()=> claimBonus(1, 'ほっこり：'+HOKKORI[parseInt(btn.dataset.hokkori)]); });
 }
@@ -827,9 +841,7 @@ function rankPlayers(list){
 function animateDice(){
   return new Promise(resolve=>{
     const face = document.getElementById('diceFace');
-    const floatWrap = document.getElementById('diceFloat');
     const floatFace = document.getElementById('diceFaceFloat');
-    if(floatWrap) floatWrap.classList.add('show');
     if(face) face.classList.add('rolling');
     if(floatFace) floatFace.classList.add('rolling');
     let n=0;
@@ -843,7 +855,6 @@ function animateDice(){
         if(face) face.classList.remove('rolling');
         if(floatFace) floatFace.classList.remove('rolling');
         resolve();
-        setTimeout(()=>{ if(floatWrap) floatWrap.classList.remove('show'); }, 1500);
       }
     }, 55);
   });
