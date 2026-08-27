@@ -206,16 +206,17 @@
   }
 
   /* ---------- bulletin board ---------- */
-  .board-list{display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto;}
-  .board-item{background:var(--paper); border:1px solid var(--paper-line); border-radius:10px; padding:10px 12px;}
-  .board-item-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;}
-  .board-type-tag{font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:999px; color:#fff8ee;}
+  .board-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-height:420px; overflow-y:auto;}
+  .board-item{background:var(--paper); border:1px solid var(--paper-line); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column;}
+  .board-item-head{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;}
+  .board-type-tag{font-size:0.64rem; font-weight:700; padding:2px 7px; border-radius:999px; color:#fff8ee;}
   .board-type-tag.client{background:var(--indigo-700);}
   .board-type-tag.hokkori{background:var(--gold); color:#5c4416;}
-  .board-nick{font-size:0.78rem; font-weight:800; color:var(--indigo-900);}
-  .board-date{font-size:0.68rem; color:#a99a72; margin-left:auto;}
-  .board-text{font-size:0.84rem; color:#4a4433; line-height:1.6;}
-  .board-empty{font-size:0.8rem; color:#a99a72; text-align:center; padding:10px;}
+  .board-nick{font-size:0.72rem; font-weight:800; color:var(--indigo-900); margin-top:8px; text-align:right;}
+  .board-date{font-size:0.62rem; color:#a99a72; margin-left:auto;}
+  .board-text{font-size:0.8rem; color:#4a4433; line-height:1.6; flex:1;}
+  .board-empty{grid-column:1/-1; font-size:0.8rem; color:#a99a72; text-align:center; padding:10px;}
+  @media (max-width:720px){ .board-grid{grid-template-columns:1fr;} }
 
   .join-screen{max-width:420px; margin:60px auto; background:#fffdf7; border:1px solid var(--paper-line); border-radius:16px; padding:30px 26px; text-align:center;}
   .join-screen h1{font-family:'Shippori Mincho', serif; color:var(--indigo-900); font-size:1.4rem; margin-bottom:6px;}
@@ -842,6 +843,22 @@ function renderGame(){
       </div>
     </section>
 
+    <section class="panel">
+      <h2 class="panel-title">📋 みんなの掲示板 <span class="tag">${BOARD_POSTS.length}件</span></h2>
+      <p class="panel-desc">顧問先獲得・ほっこりボーナスを申告したときのエピソードが、ここに流れます。</p>
+      <div class="board-grid">
+        ${BOARD_POSTS.slice(0,50).map(p=>`
+          <div class="board-item">
+            <div class="board-item-head">
+              <span class="board-type-tag ${p.type==='client'?'client':'hokkori'}">${p.type==='client' ? '🤝 顧問先獲得' : '☕ ほっこり'}</span>
+              <span class="board-date">${(p.timestamp||'').slice(0,16).replace('T',' ')}</span>
+            </div>
+            <div class="board-text">${escapeHtml(p.text)}</div>
+            <div class="board-nick">— ${escapeHtml(p.nickname)}</div>
+          </div>
+        `).join('') || '<div class="board-empty">まだ投稿がありません。</div>'}
+      </div>
+    </section>
 
     <section class="panel">
       <h2 class="panel-title">参加者ランキング <span class="tag">${ALL_PLAYERS.length}名参加</span></h2>
@@ -863,23 +880,6 @@ function renderGame(){
       <h2 class="panel-title">自分の履歴</h2>
       <div class="history-log">
         ${PLAYER.history.slice().reverse().slice(0,40).map(h=>`<div>${h.date} — ${escapeHtml(h.text)}</div>`).join('') || '<div>まだ記録がありません。</div>'}
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="panel-title">📋 みんなの掲示板 <span class="tag">${BOARD_POSTS.length}件</span></h2>
-      <p class="panel-desc">顧問先獲得・ほっこりボーナスを申告したときのエピソードが、ここに流れます。</p>
-      <div class="board-list">
-        ${BOARD_POSTS.slice(0,50).map(p=>`
-          <div class="board-item">
-            <div class="board-item-head">
-              <span class="board-type-tag ${p.type==='client'?'client':'hokkori'}">${p.type==='client' ? '🤝 顧問先獲得' : '☕ ほっこり'}</span>
-              <span class="board-nick">${escapeHtml(p.nickname)}</span>
-              <span class="board-date">${(p.timestamp||'').slice(0,16).replace('T',' ')}</span>
-            </div>
-            <div class="board-text">${escapeHtml(p.text)}</div>
-          </div>
-        `).join('') || '<div class="board-empty">まだ投稿がありません。</div>'}
       </div>
     </section>
 
@@ -991,9 +991,13 @@ function openDiceModal(count, kind, reasonLabel){
     await refreshAll();
 
     document.getElementById('diceModalResult').textContent = `合計 ${total} マス進みました！`;
-    btn.textContent = '閉じる';
-    btn.disabled = false;
-    btn.onclick = ()=>{ div.remove(); renderGame(); showArrivalQueue(arrivals); };
+    await new Promise(res=>setTimeout(res, 800)); // 結果を一瞬見せてから自動で閉じる
+
+    div.remove();
+    renderGame();
+    const mapEl = document.querySelector('.map-wrap');
+    if(mapEl) mapEl.scrollIntoView({behavior:'smooth', block:'center'});
+    showArrivalQueue(arrivals);
   };
 }
 
