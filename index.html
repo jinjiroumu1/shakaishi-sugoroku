@@ -31,30 +31,32 @@
     position:relative; background:linear-gradient(155deg, var(--indigo-950), var(--indigo-800) 70%);
     border-radius:18px; padding:28px 24px 24px; color:#f4ecd8; overflow:hidden;
     box-shadow:0 10px 30px -12px rgba(16,29,51,0.5);
+    display:flex; gap:24px; align-items:center; justify-content:space-between; flex-wrap:wrap;
   }
   .hero::before{
     content:""; position:absolute; inset:0;
     background-image:radial-gradient(circle, rgba(233,216,171,0.10) 1.5px, transparent 1.5px);
     background-size:16px 16px; opacity:0.5;
   }
+  .hero-main{position:relative; flex:1; min-width:240px;}
   .hero-eyebrow{font-size:0.72rem; letter-spacing:0.16em; color:var(--gold-soft); font-weight:700; position:relative;}
-  .hero-travelers{position:absolute; top:14px; right:18px; font-size:1.6rem; opacity:0.85; transform:rotate(-6deg);}
   .hero h1{font-family:'Shippori Mincho', serif; font-weight:800; font-size:1.8rem; margin:6px 0 4px; position:relative; line-height:1.35;}
   .hero h1 span{color:var(--vermillion);}
   .hero p.sub{margin:0; font-size:0.85rem; color:var(--indigo-200); position:relative;}
   .hero .period{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; position:relative;}
   .chip{background:rgba(244,236,216,0.08); border:1px solid rgba(244,236,216,0.25); border-radius:999px; padding:6px 14px; font-size:0.76rem; color:#f4ecd8;}
   .chip b{color:var(--gold-soft);}
-  .status-card{
-    margin-top:16px; background:#fffdf7; border:1px solid var(--paper-line); border-radius:14px;
-    padding:18px 20px; display:flex; flex-wrap:wrap; gap:18px; align-items:center; justify-content:space-between;
+  .hero-player{
+    position:relative; background:rgba(244,236,216,0.08); border:1px solid rgba(244,236,216,0.25);
+    border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:10px; min-width:220px;
   }
   .status-block{display:flex; flex-direction:column; gap:2px;}
-  .status-label{font-size:0.68rem; letter-spacing:0.08em; color:#8a7c5c; font-weight:700;}
-  .status-value{font-size:1.1rem; font-weight:900; color:var(--indigo-900); font-family:'Shippori Mincho',serif;}
-  .status-value.small{font-size:0.92rem;}
+  .status-label{font-size:0.66rem; letter-spacing:0.08em; color:var(--gold-soft); font-weight:700;}
+  .status-value{font-size:1.05rem; font-weight:900; color:#f4ecd8; font-family:'Shippori Mincho',serif;}
+  .status-value.small{font-size:0.88rem;}
   .avatar{width:38px;height:38px;border-radius:50%; display:flex;align-items:center;justify-content:center; color:#fff;font-weight:800;font-size:0.9rem; flex-shrink:0; box-shadow:inset 0 0 0 2px rgba(255,255,255,0.35);}
   .who{display:flex; gap:10px; align-items:center;}
+  .hero-player .btn-ghost{border-color:rgba(244,236,216,0.4); color:#f4ecd8;}
   .btn{border:none; cursor:pointer; font-family:inherit; font-weight:700; border-radius:10px; padding:11px 18px; font-size:0.9rem; transition:transform .12s ease, opacity .12s ease;}
   .btn:active{transform:translateY(1px);}
   .btn:disabled{opacity:0.42; cursor:not-allowed;}
@@ -161,6 +163,7 @@
   @keyframes stampIn{0%{transform:rotate(-8deg) scale(2.4); opacity:0;} 60%{opacity:1;} 100%{transform:rotate(-8deg) scale(1); opacity:1;}}
   .modal-card h3{font-family:'Shippori Mincho', serif; margin:0 0 10px; color:var(--indigo-900);}
   .modal-card p.quote{font-size:0.88rem; color:#4a4433; line-height:1.7; margin:0 0 14px;}
+  .branch-illustration{font-size:3.2rem; text-align:center; margin:-6px 0 10px;}
   .modal-card p.note{font-size:0.68rem; color:#a99a72; margin:0 0 18px;}
 
   /* ---------- 3D dice ---------- */
@@ -263,10 +266,10 @@ const STATION_INFO = [
 // 宿場の手前に置くマス数（毎日1回・約3か月でゴールするペースを想定して調整）
 const GAP_FILLERS = [20,20,18,22,14,10,20,4,10,12,10,12,8,10,10,14,14,22,18,20,14];
 
-// 寄り道マス（あとで自由に追加できます）
+// 寄り道マス（本筋から分岐する場所。あとで自由に追加できます）
 const SIDEQUEST_DEFS = [
-  {afterGapIndex:0,  offsetInGap:2, name:'浅草（寄り道）', icon:'☕', trivia:'ちょっと寄り道。田心カフェで一息つきました。', isFiction:false},
-  {afterGapIndex:17, offsetInGap:3, name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', isFiction:true},
+  {afterGapIndex:0,  offsetInGap:2, key:'asakusa',  name:'浅草（寄り道）', icon:'☕', trivia:'ちょっと寄り道。田心カフェで一息つきました。', activity:'田心カフェで食事', illustration:'🍜'},
+  {afterGapIndex:17, offsetInGap:3, key:'shirakawa', name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', activity:'新白河ハウスで一泊', illustration:'🛌'},
 ];
 
 // 進む／戻るマス（全体でそれぞれ3つずつ）
@@ -325,6 +328,7 @@ const DUMMY_QUOTES = [
 
 /* ============ 盤面の自動生成 ============ */
 let WAYPOINTS = []; // index 1..GOAL_POS
+let BRANCH_POINTS = {}; // pos -> 寄り道の分岐情報
 (function buildBoard(){
   let idx = 0;
   for(let s=0; s<STATION_INFO.length; s++){
@@ -339,8 +343,8 @@ let WAYPOINTS = []; // index 1..GOAL_POS
   SIDEQUEST_DEFS.forEach(sq=>{
     const target = WAYPOINTS.find(w=>w.type==='plain' && w.gapIndex===sq.afterGapIndex && w.offset===sq.offsetInGap);
     if(target){
-      target.type = 'sidequest';
-      target.name = sq.name; target.icon = sq.icon; target.trivia = sq.trivia; target.isFiction = sq.isFiction;
+      // 本筋のマスの型は変えず（plainのまま）、分岐点として別途登録するだけにする。
+      BRANCH_POINTS[target.pos] = sq;
     }
   });
   SPECIAL_DEFS.forEach(sp=>{
@@ -370,18 +374,19 @@ const AVATAR_COLORS = ['#c1442c','#28457a','#3d7a52','#c79a3e','#7a4fa0','#1e8a8
 function colorFor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))%AVATAR_COLORS.length; return AVATAR_COLORS[h]; }
 
 /* ============ 絵地図（イラスト街道マップ）の構築 ============ */
-// 主要な立ち寄り先（日本橋・21宿・寄り道）だけを地図上の目印にする。
+// 主要な立ち寄り先（日本橋・21宿）だけを地図上の本筋の目印にする。
+// 寄り道は本筋から分岐する別扱い（下のBRANCH_POINTSを参照して描画）。
 // 近道/後退マスや細かいマスは内部のペース調整用で、地図には出さない。
 let MAP_NODES = [];
 (function buildMapNodes(){
   MAP_NODES.push({type:'start', pos:0, name:'日本橋', icon:'🏯', trivia:'すべての旅の出発点。ここから日光まで、宿場を数えて21。'});
   WAYPOINTS.forEach(w=>{
-    if(w.type==='station' || w.type==='sidequest'){
+    if(w.type==='station'){
       MAP_NODES.push({
         type: w.type,
         pos: w.pos,
-        name: (w.type==='station' && w.isGoal) ? '鉢石宿・日光東照宮' : w.name,
-        icon: w.type==='station' ? (w.isGoal ? '⛩️' : w.icon) : w.icon,
+        name: w.isGoal ? '鉢石宿・日光東照宮' : w.name,
+        icon: w.isGoal ? '⛩️' : w.icon,
         trivia: w.trivia || '',
         isGoal: !!w.isGoal
       });
@@ -436,15 +441,13 @@ function playerXY(position){
 }
 
 // 静的パーツ（地形・道・装飾・宿場バナー・ゴールパネル）は一度だけ組み立てて使い回す
-const MAP_TERRAIN_COLORS = ['#cddcb0','#e3d6a3','#bcd6d9','#e0c6ab','#cfd9b8'];
-const MAP_PANEL_COLORS = ['#28457a','#3d7a52','#a0552f','#1e8a8a','#7a4fa0','#c1442c'];
+const MAP_STATION_COLOR = '#28457a'; // 宿場パネルは統一色
 function buildMapStaticSVG(){
   let terrain = `<rect x="0" y="0" width="${MAP_VB_W}" height="${MAP_VB_H}" fill="#f1ead8"/>`;
-  // 行ごとに背景を軽く塗り分けて、迷路のようなブロック感を出す
+  // 帯（行）の色分けはやめ、道の通り道だけ淡く均一なトーンで敷く
   for(let row=0; row<MAP_ROWS; row++){
-    const color = MAP_TERRAIN_COLORS[row % MAP_TERRAIN_COLORS.length];
     const y = MAP_PAD_Y + row*MAP_CELL_H;
-    terrain += `<rect x="${(MAP_PAD_X-90).toFixed(1)}" y="${(y-MAP_CELL_H/2+10).toFixed(1)}" width="${(MAP_VB_W-MAP_PAD_X*2+180).toFixed(1)}" height="${(MAP_CELL_H-20).toFixed(1)}" rx="26" fill="${color}" opacity="0.45"/>`;
+    terrain += `<rect x="${(MAP_PAD_X-90).toFixed(1)}" y="${(y-MAP_CELL_H/2+10).toFixed(1)}" width="${(MAP_VB_W-MAP_PAD_X*2+180).toFixed(1)}" height="${(MAP_CELL_H-20).toFixed(1)}" rx="26" fill="#dde6c9" opacity="0.4"/>`;
   }
 
   // 外周の余白に、木や花などの装飾を散らす
@@ -474,13 +477,31 @@ function buildMapStaticSVG(){
     <path d="${roadD}" fill="none" stroke="#fff8ee" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round" opacity="0.8"/>
   `;
 
+  // 宿場と宿場の間の細かいマス（近道/後退を含む）も、盤面に見える小さな四角として描く
+  let ticks = '';
+  WAYPOINTS.forEach(w=>{
+    if(w.type==='station') return; // 宿場は別途、大きなパネルで描く
+    const {x, y} = playerXY(w.pos);
+    if(w.type==='special'){
+      const isForward = w.kind==='forward';
+      const color = isForward ? 'var(--forward)' : 'var(--back)';
+      const bg = isForward ? 'var(--forward-soft)' : 'var(--back-soft)';
+      const icon = isForward ? '🐎' : '🌀';
+      ticks += `
+        <rect x="${(x-13).toFixed(1)}" y="${(y-13).toFixed(1)}" width="26" height="26" rx="6" fill="${bg}" stroke="${color}" stroke-width="2.5"/>
+        <text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" font-size="14" text-anchor="middle">${icon}</text>
+      `;
+    } else {
+      ticks += `<rect x="${(x-5).toFixed(1)}" y="${(y-5).toFixed(1)}" width="10" height="10" rx="2" fill="#fff8ee" stroke="#c9b183" stroke-width="1.5"/>`;
+    }
+  });
+
   const PW = 94, PH = 94; // パネルの大きさ（New Yearすごろく風の四角パネル）
   let banners = '';
   MAP_NODES.forEach((n,i)=>{
     if(n.isGoal) return; // ゴールは中心パネルとして別途描画
     const isStart = n.type==='start';
-    const isSide = n.type==='sidequest';
-    const fill = isSide ? 'var(--gold)' : isStart ? 'var(--indigo-900)' : MAP_PANEL_COLORS[i % MAP_PANEL_COLORS.length];
+    const fill = isStart ? 'var(--indigo-900)' : MAP_STATION_COLOR;
     const bx = n.x, by = n.y;
     banners += `
       <g class="map-node" onclick="showStationInfoModal(${i})" style="cursor:pointer;">
@@ -489,6 +510,23 @@ function buildMapStaticSVG(){
         <text x="${bx.toFixed(1)}" y="${(by-6).toFixed(1)}" font-size="34" text-anchor="middle">${n.icon}</text>
         <text x="${bx.toFixed(1)}" y="${(by+30).toFixed(1)}" font-size="13" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(n.name)}</text>
       </g>
+    `;
+  });
+
+  // 寄り道の分岐バブル（本筋から少し離れた場所に、点線でつないで表示）
+  let branches = '';
+  Object.keys(BRANCH_POINTS).forEach(posStr=>{
+    const pos = Number(posStr);
+    const sq = BRANCH_POINTS[pos];
+    const attach = playerXY(pos);
+    const bx = attach.x + 92, by = attach.y - 78; // 本筋から右上にオフセット
+    branches += `
+      <line x1="${attach.x.toFixed(1)}" y1="${attach.y.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="var(--gold)" stroke-width="3" stroke-dasharray="4 6"/>
+      <g class="map-node" onclick="showBranchInfoModal('${sq.key}')" style="cursor:pointer;">
+        <circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="34" fill="var(--gold-soft)" stroke="var(--gold)" stroke-width="4"/>
+        <text x="${bx.toFixed(1)}" y="${(by+8).toFixed(1)}" font-size="26" text-anchor="middle">${sq.icon}</text>
+      </g>
+      <text x="${bx.toFixed(1)}" y="${(by+50).toFixed(1)}" font-size="11" font-weight="700" text-anchor="middle" fill="#8a6a1a" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(sq.name)}</text>
     `;
   });
 
@@ -510,9 +548,27 @@ function buildMapStaticSVG(){
     </g>
   `;
 
-  return `<g class="map-terrain">${terrain}</g><g class="map-deco">${deco}</g><g class="map-road">${road}</g><g class="map-banners">${banners}</g><g class="map-goal">${goalPanel}</g>`;
+  return `<g class="map-terrain">${terrain}</g><g class="map-deco">${deco}</g><g class="map-road">${road}</g><g class="map-ticks">${ticks}</g><g class="map-banners">${banners}</g><g class="map-branches">${branches}</g><g class="map-goal">${goalPanel}</g>`;
 }
 let MAP_STATIC_SVG = null; // 初回描画時に一度だけ生成
+
+function showBranchInfoModal(key){
+  const sq = SIDEQUEST_DEFS.find(s=>s.key===key);
+  if(!sq) return;
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <div class="stamp side">${sq.icon}</div>
+      <h3>${escapeHtml(sq.name)}</h3>
+      <p class="quote">${escapeHtml(sq.trivia)}</p>
+      <p class="note">サイコロでちょうどこの分岐点に止まると、本筋を進むか寄り道するか選べます。</p>
+      <button class="btn btn-main" id="closeBranchInfoBtn">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('closeBranchInfoBtn').onclick = ()=> div.remove();
+}
 
 function showStationInfoModal(i){
   const n = MAP_NODES[i];
@@ -763,34 +819,30 @@ function renderGame(){
   </div>
   <div class="wrap">
     <div class="hero">
-      <div class="hero-travelers">🧑‍🦱🎒</div>
-      <div class="hero-eyebrow">社労士業界初！サムライコイン争奪</div>
-      <h1>社労士<span>日光街道</span>すごろく</h1>
-      <p class="sub">日本橋 → 21の宿場（全${GOAL_POS}マス）→ 日光東照宮。毎日1回のサイコロで、約3か月のゴールを目指します。</p>
-      <div class="period">
-        <span class="chip">開始 <b>2026/09/04</b></span>
-        <span class="chip">第1期終了 <b>2027/03/31</b></span>
-        ${periodChip}
-      </div>
-    </div>
-
-    <div class="status-card">
-      <div class="who">
-        <div class="avatar" style="background:${colorFor(ME)}">${initials(ME)}</div>
-        <div class="status-block">
-          <div class="status-label">プレイヤー</div>
-          <div class="status-value">${escapeHtml(ME)}</div>
+      <div class="hero-main">
+        <div class="hero-eyebrow">社労士業界初！サムライコイン争奪</div>
+        <h1>社労士<span>日光街道</span>すごろく</h1>
+        <p class="sub">日本橋 → 21の宿場（全${GOAL_POS}マス）→ 日光東照宮。毎日1回のサイコロで、約3か月のゴールを目指します。</p>
+        <div class="period">
+          <span class="chip">開始 <b>2026/09/04</b></span>
+          <span class="chip">第1期終了 <b>2027/03/31</b></span>
+          ${periodChip}
         </div>
       </div>
-      <div class="status-block">
-        <div class="status-label">現在地</div>
-        <div class="status-value small">${atGoal ? '日光東照宮（ゴール！）' : locationLabel(PLAYER.position)}</div>
+      <div class="hero-player">
+        <div class="who">
+          <div class="avatar" style="background:${colorFor(ME)}">${initials(ME)}</div>
+          <div class="status-block">
+            <div class="status-label">プレイヤー</div>
+            <div class="status-value">${escapeHtml(ME)}</div>
+          </div>
+        </div>
+        <div class="status-block">
+          <div class="status-label">現在地</div>
+          <div class="status-value small">${atGoal ? '日光東照宮（ゴール！）' : locationLabel(PLAYER.position)}</div>
+        </div>
+        <button class="btn btn-ghost btn-small" id="switchBtn">別のニックネームで参加</button>
       </div>
-      <div class="status-block">
-        <div class="status-label">マス目</div>
-        <div class="status-value small">${PLAYER.position} / ${GOAL_POS}</div>
-      </div>
-      <button class="btn btn-ghost btn-small" id="switchBtn">別のニックネームで参加</button>
     </div>
 
     ${phase==='before' ? `
@@ -978,19 +1030,35 @@ function openDiceModal(count, kind, reasonLabel){
     const reasonText = kind==='main' ? '本日のサイコロ' : reasonLabel;
     const arrivals = [];
     let total = 0;
+    let stoppedAtBranch = false;
     for(const v of values){
       total += v;
       const text = kind==='main'
         ? `本日のサイコロで${v}が出て、${v}マス進んだ`
         : `（${reasonText}）ボーナスサイコロで${v}が出て、${v}マス進んだ`;
       const arrival = movePlayer(v, text);
-      if(arrival) arrivals.push(arrival);
+      if(arrival && arrival.type==='branch'){
+        div.style.display = 'none'; // 選択ダイアログの間、サイコロのポップアップは一旦隠す
+        const choice = await showBranchChoiceModal(arrival);
+        div.style.display = '';
+        if(choice === 'side'){
+          PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'branch', text:`${arrival.name}へ寄り道（${arrival.activity}）`});
+          arrivals.push(arrival);
+          stoppedAtBranch = true;
+          break; // 寄り道を選んだので、残りの出目は打ち切り
+        }
+        // 「本筋を進む」を選んだ場合は何もせず次の出目へ
+      } else if(arrival){
+        arrivals.push(arrival);
+      }
       if(PLAYER.position>=GOAL_POS) break;
     }
     await apiSave(PLAYER);
     await refreshAll();
 
-    document.getElementById('diceModalResult').textContent = `合計 ${total} マス進みました！`;
+    document.getElementById('diceModalResult').textContent = stoppedAtBranch
+      ? `寄り道して、今日はここまで！`
+      : `合計 ${total} マス進みました！`;
     await new Promise(res=>setTimeout(res, 800)); // 結果を一瞬見せてから自動で閉じる
 
     div.remove();
@@ -999,6 +1067,29 @@ function openDiceModal(count, kind, reasonLabel){
     if(mapEl) mapEl.scrollIntoView({behavior:'smooth', block:'center'});
     showArrivalQueue(arrivals);
   };
+}
+
+// 分岐点で「本筋を進む」か「寄り道する」かを選ばせるモーダル。選択結果をPromiseで返す。
+function showBranchChoiceModal(branch){
+  return new Promise(resolve=>{
+    const div = document.createElement('div');
+    div.className = 'modal-backdrop';
+    div.innerHTML = `
+      <div class="modal-card">
+        <div class="stamp side">${branch.icon}</div>
+        <h3>${escapeHtml(branch.name)}への分かれ道</h3>
+        <p class="quote">${escapeHtml(branch.trivia)}</p>
+        <p class="note">寄り道すると、今日はここで打ち止めになります（残りの出目は無効）。</p>
+        <div style="display:flex; gap:10px; margin-top:6px;">
+          <button class="btn btn-ghost" id="branchMainBtn" style="flex:1;">本筋を進む</button>
+          <button class="btn btn-main" id="branchSideBtn" style="flex:1;">寄り道する</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(div);
+    document.getElementById('branchMainBtn').onclick = ()=>{ div.remove(); resolve('main'); };
+    document.getElementById('branchSideBtn').onclick = ()=>{ div.remove(); resolve('side'); };
+  });
 }
 
 async function rollMain(){
@@ -1079,6 +1170,11 @@ function movePlayer(roll, text){
     return {type:'goal', name:'鉢石宿（日光東照宮）'};
   }
 
+  const branch = BRANCH_POINTS[newPos];
+  if(branch){
+    return {type:'branch', key:branch.key, name:branch.name, icon:branch.icon, trivia:branch.trivia, activity:branch.activity, illustration:branch.illustration};
+  }
+
   const w = wpAt(newPos);
   if(!w) return null;
 
@@ -1091,7 +1187,7 @@ function movePlayer(roll, text){
     return {type:'special', kind:w.kind, targetName: stationLabel(target)};
   }
 
-  if(w.type==='station' || w.type==='sidequest') return w;
+  if(w.type==='station') return w;
   return null;
 }
 
@@ -1104,9 +1200,9 @@ function showArrivalQueue(list){
 
 function showArrivalModal(w, onClose){
   const isGoal = w.type==='goal' || w.isGoal;
-  const isSide = w.type==='sidequest';
+  const isBranch = w.type==='branch';
   const isSpecial = w.type==='special';
-  let quote, title, stampText, stampCls='';
+  let quote, title, stampText, stampCls='', illustrationHTML='';
   if(isGoal){
     title = '🎉 ゴール！日光東照宮に到着';
     quote = '「日光東照宮、到着おめでとうございます。ここまでの道のり、お疲れさまでした。」<br><span style="font-size:0.7rem;color:#a99a72;">― 先輩社労士（仮）</span>';
@@ -1124,11 +1220,12 @@ function showArrivalModal(w, onClose){
       stampText = '後退';
       stampCls = 'back';
     }
-  } else if(isSide){
-    title = w.icon + ' ' + w.name;
-    quote = w.trivia;
+  } else if(isBranch){
+    title = w.icon + ' ' + w.name + 'へ寄り道';
+    quote = `${w.activity}をしました。`;
     stampText = '寄り道';
     stampCls = 'side';
+    illustrationHTML = `<div class="branch-illustration">${w.illustration}</div>`;
   } else {
     title = w.name + ' に到着';
     const idx = (w.stationOrder!=null ? w.stationOrder : 0) % DUMMY_QUOTES.length;
@@ -1140,9 +1237,10 @@ function showArrivalModal(w, onClose){
   div.innerHTML = `
     <div class="modal-card">
       <div class="stamp ${stampCls}">${stampText}</div>
+      ${illustrationHTML}
       <h3>${title}</h3>
       <p class="quote">${quote}</p>
-      <p class="note">${isSide ? '※寄り道なので、次はこのマスから進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
+      <p class="note">${isBranch ? '※明日はこの場所から本筋を進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
       <button class="btn btn-main" id="closeModalBtn">閉じる</button>
     </div>
   `;
