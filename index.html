@@ -163,6 +163,60 @@
   .modal-card p.quote{font-size:0.88rem; color:#4a4433; line-height:1.7; margin:0 0 14px;}
   .modal-card p.note{font-size:0.68rem; color:#a99a72; margin:0 0 18px;}
 
+  /* ---------- 3D dice ---------- */
+  .dice-modal-card{max-width:520px;}
+  .dice-3d-row{display:flex; flex-wrap:wrap; gap:16px; justify-content:center; padding:24px 0 10px;}
+  .die-stage{perspective:600px;}
+  .die-cube{
+    position:relative; width:64px; height:64px; transform-style:preserve-3d;
+    transition: transform 1s cubic-bezier(.34,1.56,.64,1);
+  }
+  .die-face{
+    position:absolute; inset:0; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+    padding:9px; box-sizing:border-box; background:#fff8ee; border:2px solid var(--indigo-800); border-radius:10px;
+    backface-visibility:hidden;
+  }
+  .die-face .pip{width:9px; height:9px; border-radius:50%; background:var(--vermillion-dark); justify-self:center; align-self:center;}
+  .die-face.front{ transform: translateZ(32px); }
+  .die-face.back{ transform: rotateY(180deg) translateZ(32px); }
+  .die-face.right{ transform: rotateY(90deg) translateZ(32px); }
+  .die-face.left{ transform: rotateY(-90deg) translateZ(32px); }
+  .die-face.top{ transform: rotateX(90deg) translateZ(32px); }
+  .die-face.bottom{ transform: rotateX(-90deg) translateZ(32px); }
+  .dice-result{font-size:1rem; font-weight:800; color:var(--indigo-900); text-align:center; min-height:1.6em; margin-bottom:10px; font-family:'Shippori Mincho', serif;}
+
+  /* ---------- choice modal (bonus options) ---------- */
+  .choice-modal-card{max-width:460px; text-align:left;}
+  .choice-modal-card h3{text-align:center;}
+  .choice-modal-card > p.note{text-align:center;}
+  .choice-list{display:flex; flex-direction:column; gap:8px;}
+  .choice-item{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--paper); border:1px solid var(--paper-line); border-radius:10px;
+    padding:12px 14px; cursor:pointer; font-family:inherit; text-align:left;
+  }
+  .choice-item:hover{ background:var(--gold-soft); }
+  .choice-label{font-size:0.85rem; font-weight:700; color:var(--indigo-900);}
+  .choice-amount{font-size:0.72rem; color:var(--vermillion-dark); font-weight:700; white-space:nowrap;}
+
+  /* ---------- episode textarea ---------- */
+  .episode-textarea{
+    width:100%; border:1px solid var(--paper-line); border-radius:10px; padding:10px 12px;
+    font-family:inherit; font-size:0.9rem; background:var(--paper); resize:vertical; box-sizing:border-box;
+  }
+
+  /* ---------- bulletin board ---------- */
+  .board-list{display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto;}
+  .board-item{background:var(--paper); border:1px solid var(--paper-line); border-radius:10px; padding:10px 12px;}
+  .board-item-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;}
+  .board-type-tag{font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:999px; color:#fff8ee;}
+  .board-type-tag.client{background:var(--indigo-700);}
+  .board-type-tag.hokkori{background:var(--gold); color:#5c4416;}
+  .board-nick{font-size:0.78rem; font-weight:800; color:var(--indigo-900);}
+  .board-date{font-size:0.68rem; color:#a99a72; margin-left:auto;}
+  .board-text{font-size:0.84rem; color:#4a4433; line-height:1.6;}
+  .board-empty{font-size:0.8rem; color:#a99a72; text-align:center; padding:10px;}
+
   .join-screen{max-width:420px; margin:60px auto; background:#fffdf7; border:1px solid var(--paper-line); border-radius:16px; padding:30px 26px; text-align:center;}
   .join-screen h1{font-family:'Shippori Mincho', serif; color:var(--indigo-900); font-size:1.4rem; margin-bottom:6px;}
   .join-screen p{font-size:0.82rem; color:#7c7360; margin-bottom:18px; line-height:1.6;}
@@ -532,6 +586,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwoDBWMituHUT1Mu4PR3OXH
 let ME = null;
 let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
 let ALL_PLAYERS = [];
+let BOARD_POSTS = [];
 let MAP_ZOOMED = false; // 「自分の位置にフォーカス」表示中かどうか
 const app = document.getElementById('app');
 
@@ -599,6 +654,20 @@ async function loadAllPlayers(){
   }catch(e){ return []; }
 }
 
+async function apiPostBoard(kind, text){
+  try{ return await apiCall('postBoard', {nickname: ME, type: kind, text: text}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
+async function loadBoard(){
+  try{
+    const r = await apiCall('listBoard', {});
+    return (r && r.ok) ? r.posts : [];
+  }catch(e){ return []; }
+}
+async function refreshBoard(){
+  BOARD_POSTS = await loadBoard();
+}
+
 /* ============ 参加画面（ニックネーム＋パスワード） ============ */
 function renderJoin(){
   app.innerHTML = `
@@ -649,6 +718,7 @@ async function refreshAll(){
   // 盤面・ランキング表示用の簡易一覧（nickname/position/arrivedAtのみ）を取得。
   // 自分自身の詳細な状態（PLAYER）はローカルの値をそのまま使う。
   ALL_PLAYERS = await loadAllPlayers();
+  BOARD_POSTS = await loadBoard();
 }
 // テスト中はtrueにしておくと、開始日(9/4)前でもサイコロを振れます。
 // 本番開始前にfalseに戻し、スプレッドシートのテストデータも削除してください。
@@ -686,9 +756,8 @@ function renderGame(){
 
   app.innerHTML = `
   <div class="dice-float ${(phase==='before') ? 'hidden' : ''}" id="diceFloat">
-    <div class="dice-face-float" id="diceFaceFloat">?</div>
     <button class="dice-float-btn" id="rollMainBtnFloat" ${(rolledToday || atGoal || phase==='after') ? 'disabled' : ''}>
-      ${atGoal ? '達成' : rolledToday ? '振済み' : phase==='after' ? '終了' : 'サイコロを振る'}
+      🎲 ${atGoal ? '達成' : rolledToday ? '振済み' : phase==='after' ? '終了' : 'サイコロを振る'}
     </button>
   </div>
   <div class="wrap">
@@ -734,7 +803,6 @@ function renderGame(){
       <h2 class="panel-title">本日のサイコロ ${phase==='after' ? '<span class="tag">終了</span>' : ''}</h2>
       <p class="panel-desc">1日1回、サイコロを振って先へ進めます（実際の日付で判定）。街道の途中には「近道（次の宿場まで一気に進む）」や「後退（宿場を1つ・2つ戻る）」のマスもあります。</p>
       <div class="dice-zone">
-        <div class="dice-face" id="diceFace">?</div>
         <button class="btn btn-main" id="rollMainBtn" ${(rolledToday || atGoal || phase==='after') ? 'disabled' : ''}>
           ${atGoal ? 'ゴール済み' : rolledToday ? '本日は振り済み' : phase==='after' ? '受付終了' : 'サイコロを振る'}
         </button>
@@ -743,30 +811,19 @@ function renderGame(){
     </section>
 
     <section class="panel">
-      <h2 class="panel-title">顧問先獲得ボーナス（自己申告）</h2>
-      <p class="panel-desc">獲得した契約に応じて、その場でボーナスサイコロを振ります（貯めておくことはできません）。</p>
+      <h2 class="panel-title">ボーナスを申告する</h2>
+      <p class="panel-desc">該当することがあったら申告してください。その場でボーナスサイコロを振ります（貯めておくことはできません）。</p>
       <div class="bonus-grid">
-        ${CLIENT_BONUS.map((b,i)=>`
-          <div class="bonus-item">
-            <div class="label">${b.label}</div>
-            <div class="amount">サイコロ${b.amount}回をその場で振る</div>
-            <button class="btn btn-bonus btn-small" data-client="${i}" ${(phase==='after'||atGoal)?'disabled':''}>獲得しました</button>
-          </div>
-        `).join('')}
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="panel-title">ほっこりボーナス（自己申告）</h2>
-      <p class="panel-desc">こんな出来事があったら、その場でサイコロ1回。何度でも申告OKです。</p>
-      <div class="bonus-grid">
-        ${HOKKORI.map((h,i)=>`
-          <div class="bonus-item">
-            <div class="label">${h}</div>
-            <div class="amount">サイコロ1回をその場で振る</div>
-            <button class="btn btn-bonus btn-small" data-hokkori="${i}" ${(phase==='after'||atGoal)?'disabled':''}>ありました</button>
-          </div>
-        `).join('')}
+        <div class="bonus-item">
+          <div class="label">🤝 顧問先獲得ボーナス</div>
+          <div class="amount">契約内容に応じてサイコロ1〜5回</div>
+          <button class="btn btn-bonus" id="openClientBonusBtn" ${(phase==='after'||atGoal)?'disabled':''}>申告する</button>
+        </div>
+        <div class="bonus-item">
+          <div class="label">☕ ほっこりボーナス</div>
+          <div class="amount">うれしい出来事があったらサイコロ1回</div>
+          <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal)?'disabled':''}>申告する</button>
+        </div>
       </div>
     </section>
     ` : ''}
@@ -809,9 +866,26 @@ function renderGame(){
       </div>
     </section>
 
+    <section class="panel">
+      <h2 class="panel-title">📋 みんなの掲示板 <span class="tag">${BOARD_POSTS.length}件</span></h2>
+      <p class="panel-desc">顧問先獲得・ほっこりボーナスを申告したときのエピソードが、ここに流れます。</p>
+      <div class="board-list">
+        ${BOARD_POSTS.slice(0,50).map(p=>`
+          <div class="board-item">
+            <div class="board-item-head">
+              <span class="board-type-tag ${p.type==='client'?'client':'hokkori'}">${p.type==='client' ? '🤝 顧問先獲得' : '☕ ほっこり'}</span>
+              <span class="board-nick">${escapeHtml(p.nickname)}</span>
+              <span class="board-date">${(p.timestamp||'').slice(0,16).replace('T',' ')}</span>
+            </div>
+            <div class="board-text">${escapeHtml(p.text)}</div>
+          </div>
+        `).join('') || '<div class="board-empty">まだ投稿がありません。</div>'}
+      </div>
+    </section>
+
     <div class="footer-note">
       ※ 宿場・寄り道到着メッセージは仮の文言です。後日、実際の先輩社労士のメッセージ等に差し替え予定です。<br>
-      ※ 参加者の記録はニックネーム単位で全員から見える共有データとして保存されます（パスワードは簡易ハッシュ保存）。
+      ※ 参加者の記録・掲示板の投稿はニックネーム単位で全員から見える共有データとして保存されます（パスワードは簡易ハッシュ保存）。
     </div>
   </div>
   `;
@@ -819,12 +893,14 @@ function renderGame(){
   document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; renderJoin(); };
   const mapZoomBtn = document.getElementById('mapZoomBtn');
   if(mapZoomBtn) mapZoomBtn.onclick = ()=>{ MAP_ZOOMED = !MAP_ZOOMED; renderGame(); };
+  const openClientBonusBtn = document.getElementById('openClientBonusBtn');
+  if(openClientBonusBtn) openClientBonusBtn.onclick = ()=> showChoiceModal('client');
+  const openHokkoriBonusBtn = document.getElementById('openHokkoriBonusBtn');
+  if(openHokkoriBonusBtn) openHokkoriBonusBtn.onclick = ()=> showChoiceModal('hokkori');
   const rollMainBtn = document.getElementById('rollMainBtn');
   if(rollMainBtn) rollMainBtn.onclick = rollMain;
   const rollMainBtnFloat = document.getElementById('rollMainBtnFloat');
   if(rollMainBtnFloat) rollMainBtnFloat.onclick = rollMain;
-  document.querySelectorAll('[data-client]').forEach(btn=>{ btn.onclick = ()=> claimBonus(CLIENT_BONUS[parseInt(btn.dataset.client)].amount, CLIENT_BONUS[parseInt(btn.dataset.client)].label); });
-  document.querySelectorAll('[data-hokkori]').forEach(btn=>{ btn.onclick = ()=> claimBonus(1, 'ほっこり：'+HOKKORI[parseInt(btn.dataset.hokkori)]); });
 }
 
 function medal(i){ if(i===0) return '🥇'; if(i===1) return '🥈'; if(i===2) return '🥉'; return (i+1)+'位'; }
@@ -837,57 +913,153 @@ function rankPlayers(list){
   });
 }
 
-/* ============ サイコロ処理 ============ */
-function animateDice(){
-  return new Promise(resolve=>{
-    const face = document.getElementById('diceFace');
-    const floatFace = document.getElementById('diceFaceFloat');
-    if(face) face.classList.add('rolling');
-    if(floatFace) floatFace.classList.add('rolling');
-    let n=0;
-    const iv = setInterval(()=>{
-      const v = 1+Math.floor(Math.random()*6);
-      if(face) face.textContent = v;
-      if(floatFace) floatFace.textContent = v;
-      n++;
-      if(n>6){
-        clearInterval(iv);
-        if(face) face.classList.remove('rolling');
-        if(floatFace) floatFace.classList.remove('rolling');
-        resolve();
-      }
-    }, 55);
-  });
+/* ============ サイコロ処理（3Dダイス・ポップアップ方式） ============ */
+const DICE_ROTATION = {
+  1: {rx:0,   ry:0},
+  2: {rx:0,   ry:-90},
+  3: {rx:-90, ry:0},
+  4: {rx:90,  ry:0},
+  5: {rx:0,   ry:90},
+  6: {rx:0,   ry:180},
+};
+function pipCellsHTML(value){
+  const map = {
+    1: [[2,2]],
+    2: [[1,1],[3,3]],
+    3: [[1,1],[2,2],[3,3]],
+    4: [[1,1],[1,3],[3,1],[3,3]],
+    5: [[1,1],[1,3],[2,2],[3,1],[3,3]],
+    6: [[1,1],[1,3],[2,1],[2,3],[3,1],[3,3]],
+  };
+  return (map[value]||[]).map(([r,c])=>`<div class="pip" style="grid-row:${r};grid-column:${c};"></div>`).join('');
+}
+function dieCubeHTML(idx){
+  const faces = [[1,'front'],[6,'back'],[2,'right'],[5,'left'],[3,'top'],[4,'bottom']];
+  return `
+    <div class="die-stage">
+      <div class="die-cube" id="dieCube${idx}">
+        ${faces.map(([v,cls])=>`<div class="die-face ${cls}">${pipCellsHTML(v)}</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// count個のサイコロを同時に転がすポップアップを開く。振り終わったら合計分マスを進める。
+function openDiceModal(count, kind, reasonLabel){
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card dice-modal-card">
+      <h3>${kind==='main' ? '🎲 本日のサイコロ' : '🎲 ' + escapeHtml(reasonLabel)}</h3>
+      <p class="note" style="margin-bottom:14px;">${count>1 ? count+'個のサイコロを同時に振ります。' : 'サイコロを振ります。'}</p>
+      <div class="dice-3d-row">${Array.from({length:count}).map((_,i)=>dieCubeHTML(i)).join('')}</div>
+      <div class="dice-result" id="diceModalResult"></div>
+      <button class="btn btn-main" id="diceModalBtn">サイコロを押す</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+
+  const btn = document.getElementById('diceModalBtn');
+  btn.onclick = async ()=>{
+    btn.disabled = true;
+    const values = [];
+    for(let i=0;i<count;i++){
+      const v = 1 + Math.floor(Math.random()*6);
+      values.push(v);
+      const cube = document.getElementById('dieCube'+i);
+      const rot = DICE_ROTATION[v];
+      const extraX = 360*(2+Math.floor(Math.random()*2));
+      const extraY = 360*(2+Math.floor(Math.random()*2));
+      cube.style.transform = `rotateX(${rot.rx+extraX}deg) rotateY(${rot.ry+extraY}deg)`;
+    }
+    await new Promise(res=>setTimeout(res, 1050));
+
+    if(kind==='main'){ PLAYER.lastRollDate = todayStr(); }
+    const reasonText = kind==='main' ? '本日のサイコロ' : reasonLabel;
+    const arrivals = [];
+    let total = 0;
+    for(const v of values){
+      total += v;
+      const text = kind==='main'
+        ? `本日のサイコロで${v}が出て、${v}マス進んだ`
+        : `（${reasonText}）ボーナスサイコロで${v}が出て、${v}マス進んだ`;
+      const arrival = movePlayer(v, text);
+      if(arrival) arrivals.push(arrival);
+      if(PLAYER.position>=GOAL_POS) break;
+    }
+    await apiSave(PLAYER);
+    await refreshAll();
+
+    document.getElementById('diceModalResult').textContent = `合計 ${total} マス進みました！`;
+    btn.textContent = '閉じる';
+    btn.disabled = false;
+    btn.onclick = ()=>{ div.remove(); renderGame(); showArrivalQueue(arrivals); };
+  };
 }
 
 async function rollMain(){
   const t = todayStr();
   if(PLAYER.lastRollDate === t || PLAYER.position>=GOAL_POS) return;
-  const btn = document.getElementById('rollMainBtn'); if(btn) btn.disabled = true;
-  await animateDice();
-  const roll = 1 + Math.floor(Math.random()*6);
-  PLAYER.lastRollDate = t;
-  const arrival = movePlayer(roll, `本日のサイコロで${roll}が出て、${roll}マス進んだ`);
-  await apiSave(PLAYER);
-  await refreshAll();
-  renderGame();
-  if(arrival) showArrivalModal(arrival);
+  openDiceModal(1, 'main', '本日のサイコロ');
 }
 
-async function claimBonus(diceCount, reasonLabel){
-  PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'claim', text:`${reasonLabel} → サイコロ${diceCount}回`});
-  const arrivals = [];
-  for(let i=0;i<diceCount;i++){
-    await animateDice();
-    const roll = 1 + Math.floor(Math.random()*6);
-    const arrival = movePlayer(roll, `（${reasonLabel}）ボーナスサイコロで${roll}が出て、${roll}マス進んだ`);
-    if(arrival) arrivals.push(arrival);
-    if(PLAYER.position>=GOAL_POS) break;
-  }
-  await apiSave(PLAYER);
-  await refreshAll();
-  renderGame();
-  showArrivalQueue(arrivals);
+/* ============ ボーナス申告（選択→エピソード入力→掲示板投稿→サイコロ） ============ */
+function bonusOptions(kind){
+  if(kind==='client') return CLIENT_BONUS.map(b=>({label:b.label, amount:b.amount}));
+  return HOKKORI.map(h=>({label:h, amount:1}));
+}
+
+function showChoiceModal(kind){
+  const opts = bonusOptions(kind);
+  const title = kind==='client' ? '🤝 顧問先獲得ボーナス' : '☕ ほっこりボーナス';
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card choice-modal-card">
+      <h3>${title}</h3>
+      <p class="note" style="margin-bottom:14px;">該当するものを選んでください。</p>
+      <div class="choice-list">
+        ${opts.map((o,i)=>`
+          <button class="choice-item" data-idx="${i}">
+            <span class="choice-label">${escapeHtml(o.label)}</span>
+            <span class="choice-amount">サイコロ${o.amount}回</span>
+          </button>
+        `).join('')}
+      </div>
+      <button class="btn btn-ghost" id="choiceCancelBtn" style="margin-top:14px;">キャンセル</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  div.querySelectorAll('.choice-item').forEach(btn=>{
+    btn.onclick = ()=>{ div.remove(); showEpisodeModal(kind, parseInt(btn.dataset.idx)); };
+  });
+  document.getElementById('choiceCancelBtn').onclick = ()=> div.remove();
+}
+
+function showEpisodeModal(kind, idx){
+  const opt = bonusOptions(kind)[idx];
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <h3>${escapeHtml(opt.label)}</h3>
+      <p class="note" style="margin-bottom:10px;">どんなことがあったの？（掲示板にニックネームと一緒に投稿されます）</p>
+      <textarea id="episodeInput" class="episode-textarea" rows="4" placeholder="例）顧問先の担当者さんにお礼を言われて嬉しかった"></textarea>
+      <div class="err" id="episodeErr" style="min-height:1.2em;margin:6px 0;"></div>
+      <button class="btn btn-main" id="episodeSubmitBtn" style="width:100%;">投稿してサイコロへ進む</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('episodeSubmitBtn').onclick = async ()=>{
+    const text = document.getElementById('episodeInput').value.trim();
+    if(!text){ document.getElementById('episodeErr').textContent = '内容を入力してください。'; return; }
+    const btn = document.getElementById('episodeSubmitBtn');
+    btn.disabled = true; btn.textContent = '投稿中…';
+    await apiPostBoard(kind, text);
+    await refreshBoard();
+    div.remove();
+    openDiceModal(opt.amount, 'bonus', opt.label);
+  };
 }
 
 function movePlayer(roll, text){
