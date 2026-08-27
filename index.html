@@ -84,10 +84,11 @@
   .map-svg{transition: none;}
   .my-token-pulse{animation: mapPulse 1.6s ease-out infinite;}
   @keyframes mapPulse{
-    0%{ r:15; opacity:0.9; }
-    100%{ r:32; opacity:0; }
+    0%{ r:26; opacity:0.9; }
+    100%{ r:52; opacity:0; }
   }
-  .map-toolbar{display:flex; justify-content:center; margin-bottom:10px;}
+  .my-token-marker{ transition: transform 0.9s cubic-bezier(.4,0,.2,1); }
+  .map-toolbar{display:flex; justify-content:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
 
   /* 「サイコロを振る」ボタンごと、画面右側に常時固定表示するパネル */
   .dice-float{
@@ -116,7 +117,8 @@
     .dice-float-btn{ writing-mode:horizontal-tb; padding:10px 14px; font-size:0.78rem; }
     .dice-face-float{ width:44px; height:44px; font-size:1.2rem; }
   }
-  .map-svg{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 6px 20px -8px rgba(16,29,51,0.35);}
+  .map-svg{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 6px 20px -8px rgba(16,29,51,0.35); touch-action:none; cursor:grab;}
+  .map-svg:active{cursor:grabbing;}
   .route{
     position:relative; display:flex; align-items:flex-end; min-width:max-content;
     padding-top:14px;
@@ -268,8 +270,8 @@ const GAP_FILLERS = [20,20,18,22,14,10,20,4,10,12,10,12,8,10,10,14,14,22,18,20,1
 
 // 寄り道マス（本筋から分岐する場所。あとで自由に追加できます）
 const SIDEQUEST_DEFS = [
-  {afterGapIndex:0,  offsetInGap:2, key:'asakusa',  name:'浅草（寄り道）', icon:'☕', trivia:'ちょっと寄り道。田心カフェで一息つきました。', activity:'田心カフェで食事', illustration:'🍜'},
-  {afterGapIndex:17, offsetInGap:3, key:'shirakawa', name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', activity:'新白河ハウスで一泊', illustration:'🛌'},
+  {afterGapIndex:0,  offsetInGap:10, key:'asakusa',  name:'浅草（寄り道）', icon:'☕', trivia:'ちょっと寄り道。田心カフェで一息つきました。', activity:'田心カフェで食事', illustration:'🍜'},
+  {afterGapIndex:17, offsetInGap:6, key:'shirakawa', name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', activity:'新白河ハウスで一泊', illustration:'🛌'},
 ];
 
 // 進む／戻るマス（全体でそれぞれ3つずつ）
@@ -600,25 +602,25 @@ function buildMapTokensSVG(players){
     list.sort((a,b)=> (a.nickname===ME?-1:0) - (b.nickname===ME?-1:0));
     list.forEach((p,idx)=>{
       const {x,y} = playerXY(p.position);
-      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 18 : 0;
+      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 30 : 0;
       const isMe = p.nickname===ME;
-      const tx = x+jitter, ty = y-8;
+      const tx = x+jitter, ty = y;
       if(isMe){
         svg += `
-          <g class="my-token-marker">
-            <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="20" fill="none" stroke="var(--vermillion)" stroke-width="3" class="my-token-pulse"/>
-            <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="15" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="3"/>
-            <text x="${tx.toFixed(1)}" y="${(ty+4.5).toFixed(1)}" font-size="12" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
-            <text x="${tx.toFixed(1)}" y="${(ty-28).toFixed(1)}" font-size="15" text-anchor="middle">👇</text>
-            <rect x="${(tx-34).toFixed(1)}" y="${(ty-52).toFixed(1)}" width="68" height="22" rx="11" fill="var(--vermillion)"/>
-            <text x="${tx.toFixed(1)}" y="${(ty-37).toFixed(1)}" font-size="12" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
+          <g id="myTokenGroup" class="my-token-marker" transform="translate(${tx.toFixed(1)},${ty.toFixed(1)})">
+            <circle cx="0" cy="0" r="34" fill="none" stroke="var(--vermillion)" stroke-width="3" class="my-token-pulse"/>
+            <circle cx="0" cy="0" r="26" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="4"/>
+            <text x="0" y="8" font-size="18" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
+            <text x="0" y="-46" font-size="18" text-anchor="middle">👇</text>
+            <rect x="-38" y="-72" width="76" height="24" rx="12" fill="var(--vermillion)"/>
+            <text x="0" y="-55" font-size="13" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
           </g>
         `;
       } else {
         svg += `
-          <g>
-            <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="11" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="2"/>
-            <text x="${tx.toFixed(1)}" y="${(ty+3.5).toFixed(1)}" font-size="9" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
+          <g transform="translate(${tx.toFixed(1)},${ty.toFixed(1)})">
+            <circle cx="0" cy="0" r="20" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="3"/>
+            <text x="0" y="6" font-size="14" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
           </g>
         `;
       }
@@ -644,16 +646,54 @@ let ME = null;
 let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
 let ALL_PLAYERS = [];
 let BOARD_POSTS = [];
-let MAP_ZOOMED = false; // 「自分の位置にフォーカス」表示中かどうか
+let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1; // 盤面のドラッグ移動・拡大縮小の状態
 const app = document.getElementById('app');
 
-function mapViewBox(){
-  if(!MAP_ZOOMED || !PLAYER) return `0 0 ${MAP_VB_W} ${MAP_VB_H}`;
-  const size = 340;
+function applyMapTransform(){
+  const g = document.getElementById('mapViewport');
+  if(g) g.setAttribute('transform', `translate(${MAP_PAN_X.toFixed(1)},${MAP_PAN_Y.toFixed(1)}) scale(${MAP_SCALE.toFixed(3)})`);
+}
+function focusMapOnMe(){
+  if(!PLAYER) return;
   const {x,y} = playerXY(PLAYER.position);
-  const cx = Math.min(Math.max(x, size/2), MAP_VB_W - size/2);
-  const cy = Math.min(Math.max(y, size/2), MAP_VB_H - size/2);
-  return `${(cx-size/2).toFixed(1)} ${(cy-size/2).toFixed(1)} ${size} ${size}`;
+  MAP_SCALE = 2;
+  MAP_PAN_X = MAP_VB_W/2 - x*MAP_SCALE;
+  MAP_PAN_Y = MAP_VB_H/2 - y*MAP_SCALE;
+  applyMapTransform();
+}
+function resetMapView(){
+  MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0;
+  applyMapTransform();
+}
+function setupMapDrag(svgEl){
+  if(!svgEl) return;
+  let dragging = false, start = {x:0,y:0}, panStart = {x:0,y:0}, moved = 0;
+  svgEl.addEventListener('pointerdown', e=>{
+    dragging = true; moved = 0; start = {x:e.clientX, y:e.clientY}; panStart = {x:MAP_PAN_X, y:MAP_PAN_Y};
+    svgEl.setPointerCapture(e.pointerId);
+  });
+  svgEl.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const rect = svgEl.getBoundingClientRect();
+    const factor = MAP_VB_W / rect.width;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    moved = Math.max(moved, Math.hypot(dx, dy));
+    MAP_PAN_X = panStart.x + dx * factor;
+    MAP_PAN_Y = panStart.y + dy * factor;
+    applyMapTransform();
+  });
+  const endDrag = ()=>{ dragging = false; };
+  svgEl.addEventListener('pointerup', endDrag);
+  svgEl.addEventListener('pointerleave', endDrag);
+  svgEl.addEventListener('wheel', e=>{
+    e.preventDefault();
+    MAP_SCALE = Math.min(3, Math.max(0.6, MAP_SCALE + (e.deltaY>0 ? -0.12 : 0.12)));
+    applyMapTransform();
+  }, {passive:false});
+  // ドラッグ操作の直後は、下のパネルのクリック（宿場詳細ポップアップ）が誤って開かないようにする
+  svgEl.addEventListener('click', e=>{
+    if(moved > 6){ e.stopPropagation(); e.preventDefault(); }
+  }, true);
 }
 
 // JSONP方式でApps Scriptと通信（CORSの制約を受けないため確実に動く）
@@ -883,14 +923,17 @@ function renderGame(){
 
     <section class="panel">
       <h2 class="panel-title">街道マップ <span class="tag">日本橋 → 21宿＋寄り道 → 日光</span></h2>
-      <p class="panel-desc">外側の日本橋から、渦を巻くように中心の日光を目指す絵地図です。パネルをタップすると宿場の説明が見られます。自分のコマは光る輪と「👇あなた」で表示されます。</p>
+      <p class="panel-desc">ドラッグで盤面を動かせます。ホイール／ボタンで拡大縮小。パネルをタップすると宿場の説明が見られます。自分のコマは大きく光る輪と「👇あなた」で表示されます。</p>
       <div class="map-toolbar">
-        <button class="btn btn-ghost btn-small" id="mapZoomBtn">${MAP_ZOOMED ? '🗺 全体表示に戻す' : '🔍 自分の位置にフォーカス'}</button>
+        <button class="btn btn-ghost btn-small" id="mapFocusBtn">🔍 自分の位置にフォーカス</button>
+        <button class="btn btn-ghost btn-small" id="mapResetBtn">🗺 全体表示に戻す</button>
       </div>
       <div class="map-wrap">
-        <svg viewBox="${mapViewBox()}" class="map-svg" xmlns="http://www.w3.org/2000/svg">
-          ${MAP_STATIC_SVG || (MAP_STATIC_SVG = buildMapStaticSVG())}
-          ${buildMapTokensSVG(ALL_PLAYERS)}
+        <svg viewBox="0 0 ${MAP_VB_W} ${MAP_VB_H}" class="map-svg" id="mapSvg" xmlns="http://www.w3.org/2000/svg">
+          <g id="mapViewport" transform="translate(${MAP_PAN_X},${MAP_PAN_Y}) scale(${MAP_SCALE})">
+            ${MAP_STATIC_SVG || (MAP_STATIC_SVG = buildMapStaticSVG())}
+            <g id="mapTokensLayer">${buildMapTokensSVG(ALL_PLAYERS)}</g>
+          </g>
         </svg>
       </div>
     </section>
@@ -943,8 +986,11 @@ function renderGame(){
   `;
 
   document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; renderJoin(); };
-  const mapZoomBtn = document.getElementById('mapZoomBtn');
-  if(mapZoomBtn) mapZoomBtn.onclick = ()=>{ MAP_ZOOMED = !MAP_ZOOMED; renderGame(); };
+  const mapFocusBtn = document.getElementById('mapFocusBtn');
+  if(mapFocusBtn) mapFocusBtn.onclick = focusMapOnMe;
+  const mapResetBtn = document.getElementById('mapResetBtn');
+  if(mapResetBtn) mapResetBtn.onclick = resetMapView;
+  setupMapDrag(document.getElementById('mapSvg'));
   const openClientBonusBtn = document.getElementById('openClientBonusBtn');
   if(openClientBonusBtn) openClientBonusBtn.onclick = ()=> showChoiceModal('client');
   const openHokkoriBonusBtn = document.getElementById('openHokkoriBonusBtn');
@@ -1054,19 +1100,27 @@ function openDiceModal(count, kind, reasonLabel){
       if(PLAYER.position>=GOAL_POS) break;
     }
     await apiSave(PLAYER);
-    await refreshAll();
 
-    document.getElementById('diceModalResult').textContent = stoppedAtBranch
-      ? `寄り道して、今日はここまで！`
-      : `合計 ${total} マス進みました！`;
-    await new Promise(res=>setTimeout(res, 800)); // 結果を一瞬見せてから自動で閉じる
-
+    // ポップアップはすぐ閉じて、盤面上でコマが動く様子を見せる
     div.remove();
+    document.querySelector('.map-wrap')?.scrollIntoView({behavior:'smooth', block:'center'});
+    await animateMyTokenTo(PLAYER.position);
+
+    await refreshAll();
     renderGame();
-    const mapEl = document.querySelector('.map-wrap');
-    if(mapEl) mapEl.scrollIntoView({behavior:'smooth', block:'center'});
     showArrivalQueue(arrivals);
   };
+}
+
+// 盤面上の自分のコマを、現在描画されているSVGの上でなめらかに移動させる
+function animateMyTokenTo(newPos){
+  return new Promise(resolve=>{
+    const g = document.getElementById('myTokenGroup');
+    if(!g){ resolve(); return; }
+    const {x, y} = playerXY(newPos);
+    g.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    setTimeout(resolve, 950); // CSSのtransition時間（0.9s）に合わせて待つ
+  });
 }
 
 // 分岐点で「本筋を進む」か「寄り道する」かを選ばせるモーダル。選択結果をPromiseで返す。
