@@ -402,14 +402,15 @@ const N_NODES = MAP_NODES.length;
 const MAP_ROWS = Math.ceil(N_NODES / MAP_COLS);
 const MAP_CELL_W = 168, MAP_CELL_H = 190;
 const MAP_PAD_X = 76, MAP_PAD_Y = 90;
+const MAP_TOP_EXTRA = 170; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
 const MAP_VB_W = MAP_PAD_X*2 + (MAP_COLS-1)*MAP_CELL_W;
-const MAP_VB_H = MAP_PAD_Y*2 + (MAP_ROWS-1)*MAP_CELL_H;
+const MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H;
 MAP_NODES.forEach((n,i)=>{
   const row = Math.floor(i / MAP_COLS);
   const posInRow = i % MAP_COLS;
   const col = (row % 2 === 0) ? posInRow : (MAP_COLS - 1 - posInRow); // 偶数行→右へ、奇数行→左へ
   n.x = MAP_PAD_X + col*MAP_CELL_W;
-  n.y = MAP_PAD_Y + row*MAP_CELL_H;
+  n.y = MAP_PAD_Y + MAP_TOP_EXTRA + row*MAP_CELL_H;
 });
 
 function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
@@ -457,11 +458,11 @@ function buildMapStaticSVG(){
   const decoEmoji = ['🌳','🌲','🌸','🌼','☁️','🍃','⛰️','🐦'];
   const decoSpots = [];
   for(let row=0; row<MAP_ROWS; row++){
-    decoSpots.push({x:MAP_PAD_X-52, y:MAP_PAD_Y+row*MAP_CELL_H});
-    decoSpots.push({x:MAP_VB_W-MAP_PAD_X+52, y:MAP_PAD_Y+row*MAP_CELL_H});
+    decoSpots.push({x:MAP_PAD_X-52, y:MAP_PAD_Y+MAP_TOP_EXTRA+row*MAP_CELL_H});
+    decoSpots.push({x:MAP_VB_W-MAP_PAD_X+52, y:MAP_PAD_Y+MAP_TOP_EXTRA+row*MAP_CELL_H});
   }
   for(let col=0; col<MAP_COLS; col++){
-    decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:MAP_PAD_Y-58});
+    decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:20});
     decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:MAP_VB_H-MAP_PAD_Y+58});
   }
   decoSpots.forEach((c,i)=>{
@@ -515,15 +516,19 @@ function buildMapStaticSVG(){
     `;
   });
 
-  // 寄り道の分岐バブル（本筋から少し離れた場所に、点線でつないで表示）
+  // 寄り道の分岐バブル（本筋から真上に、行き・帰りの2本の道で袋小路状につなぐ）
   let branches = '';
   Object.keys(BRANCH_POINTS).forEach(posStr=>{
     const pos = Number(posStr);
     const sq = BRANCH_POINTS[pos];
     const attach = playerXY(pos);
-    const bx = attach.x + 92, by = attach.y - 78; // 本筋から右上にオフセット
+    const bx = attach.x, by = attach.y - 140; // 本筋から真上にオフセット
+    const midY = (attach.y + by) / 2;
+    const goD = `M ${attach.x.toFixed(1)} ${attach.y.toFixed(1)} Q ${(attach.x-16).toFixed(1)} ${midY.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
+    const backD = `M ${bx.toFixed(1)} ${by.toFixed(1)} Q ${(attach.x+16).toFixed(1)} ${midY.toFixed(1)} ${attach.x.toFixed(1)} ${attach.y.toFixed(1)}`;
     branches += `
-      <line x1="${attach.x.toFixed(1)}" y1="${attach.y.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="var(--gold)" stroke-width="3" stroke-dasharray="4 6"/>
+      <path d="${goD}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="4 6"/>
+      <path d="${backD}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="4 6"/>
       <g class="map-node" onclick="showBranchInfoModal('${sq.key}')" style="cursor:pointer;">
         <circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="34" fill="var(--gold-soft)" stroke="var(--gold)" stroke-width="4"/>
         <text x="${bx.toFixed(1)}" y="${(by+8).toFixed(1)}" font-size="26" text-anchor="middle">${sq.icon}</text>
@@ -649,7 +654,14 @@ let BOARD_POSTS = [];
 let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1; // 盤面のドラッグ移動・拡大縮小の状態
 const app = document.getElementById('app');
 
+function clampMapPan(){
+  const minPanX = Math.min(0, MAP_VB_W*(1-MAP_SCALE));
+  const minPanY = Math.min(0, MAP_VB_H*(1-MAP_SCALE));
+  MAP_PAN_X = Math.min(0, Math.max(minPanX, MAP_PAN_X));
+  MAP_PAN_Y = Math.min(0, Math.max(minPanY, MAP_PAN_Y));
+}
 function applyMapTransform(){
+  clampMapPan();
   const g = document.getElementById('mapViewport');
   if(g) g.setAttribute('transform', `translate(${MAP_PAN_X.toFixed(1)},${MAP_PAN_Y.toFixed(1)}) scale(${MAP_SCALE.toFixed(3)})`);
 }
@@ -687,7 +699,7 @@ function setupMapDrag(svgEl){
   svgEl.addEventListener('pointerleave', endDrag);
   svgEl.addEventListener('wheel', e=>{
     e.preventDefault();
-    MAP_SCALE = Math.min(3, Math.max(0.6, MAP_SCALE + (e.deltaY>0 ? -0.12 : 0.12)));
+    MAP_SCALE = Math.min(3, Math.max(1, MAP_SCALE + (e.deltaY>0 ? -0.12 : 0.12)));
     applyMapTransform();
   }, {passive:false});
   // ドラッグ操作の直後は、下のパネルのクリック（宿場詳細ポップアップ）が誤って開かないようにする
@@ -1099,12 +1111,12 @@ function openDiceModal(count, kind, reasonLabel){
       }
       if(PLAYER.position>=GOAL_POS) break;
     }
-    await apiSave(PLAYER);
-
-    // ポップアップはすぐ閉じて、盤面上でコマが動く様子を見せる
+    // ポップアップはすぐ閉じて、盤面上でコマが動く様子を見せる（保存は裏で並行して進める）
     div.remove();
     document.querySelector('.map-wrap')?.scrollIntoView({behavior:'smooth', block:'center'});
+    const savePromise = apiSave(PLAYER);
     await animateMyTokenTo(PLAYER.position);
+    await savePromise;
 
     await refreshAll();
     renderGame();
