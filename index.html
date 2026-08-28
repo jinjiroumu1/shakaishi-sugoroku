@@ -275,7 +275,7 @@ const STATION_INFO = [
   {name:'鉢石宿',   icon:'⛩️', trivia:'いよいよ日光東照宮のお膝元、旅の終点。'},
 ];
 // 宿場の手前に置くマス数（毎日1回・約3か月でゴールするペースを想定して調整）
-const GAP_FILLERS = [20,20,18,22,14,10,20,4,10,12,10,12,8,10,10,14,14,22,18,20,14];
+const GAP_FILLERS = [14,14,14,14,14,10,14,4,10,12,10,12,8,10,10,14,14,14,14,14,14]; // 距離比例、多い区間は14マスを上限に抑制
 
 // 寄り道マス（本筋から分岐する場所。あとで自由に追加できます）
 const SIDEQUEST_DEFS = [
@@ -405,22 +405,37 @@ let MAP_NODES = [];
   });
 })();
 
-// ジグザグ格子状（New Yearすごろく風）に配置。左上スタート→行ごとに折り返しながらゴールへ。
-const MAP_COLS = 5;
+// ジグザグ状（New Yearすごろく風）に配置。マス1つあたりの間隔を一定にし、
+// 宿場と宿場の間の実際の距離（GAP_FILLERSのマス数）に応じて宿場の位置がずれるようにする。
 const N_NODES = MAP_NODES.length;
-const MAP_ROWS = Math.ceil(N_NODES / MAP_COLS);
-const MAP_CELL_W = 168, MAP_CELL_H = 190;
-const MAP_PAD_X = 76, MAP_PAD_Y = 90;
-const MAP_TOP_EXTRA = 170; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
-const MAP_VB_W = MAP_PAD_X*2 + (MAP_COLS-1)*MAP_CELL_W;
-const MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H;
-MAP_NODES.forEach((n,i)=>{
-  const row = Math.floor(i / MAP_COLS);
-  const posInRow = i % MAP_COLS;
-  const col = (row % 2 === 0) ? posInRow : (MAP_COLS - 1 - posInRow); // 偶数行→右へ、奇数行→左へ
-  n.x = MAP_PAD_X + col*MAP_CELL_W;
-  n.y = MAP_PAD_Y + MAP_TOP_EXTRA + row*MAP_CELL_H;
-});
+const MAP_PAD_X = 100, MAP_PAD_Y = 110;
+const MAP_TOP_EXTRA = 190; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
+const MAP_CELL_H = 300;    // 行から行への縦の間隔
+const SQUARE_PITCH = 34;   // マス1つあたりの間隔（距離比例のもと）
+const MAX_ROW_WIDTH = 1250; // 1行の最大横幅（これを超えたら折り返す）
+
+let MAP_VB_W, MAP_VB_H, MAP_ROWS;
+(function layoutMapNodes(){
+  let curX = MAP_PAD_X, curY = MAP_PAD_Y + MAP_TOP_EXTRA;
+  let direction = 1; // 1=右へ、-1=左へ
+  let row = 0;
+  MAP_NODES[0].x = curX; MAP_NODES[0].y = curY;
+  for(let i=0; i<MAP_NODES.length-1; i++){
+    const segLen = SQUARE_PITCH * (GAP_FILLERS[i] + 1); // 実際の距離（マス数）に比例した長さ
+    let nextX = curX + direction*segLen;
+    if(direction===1 && nextX > MAP_PAD_X + MAX_ROW_WIDTH){
+      row++; curY += MAP_CELL_H; direction = -1; curX = MAP_PAD_X + MAX_ROW_WIDTH; nextX = curX + direction*segLen;
+    } else if(direction===-1 && nextX < MAP_PAD_X){
+      row++; curY += MAP_CELL_H; direction = 1; curX = MAP_PAD_X; nextX = curX + direction*segLen;
+    }
+    curX = nextX;
+    MAP_NODES[i+1].x = curX;
+    MAP_NODES[i+1].y = curY;
+  }
+  MAP_ROWS = row + 1;
+  MAP_VB_W = MAP_PAD_X*2 + MAX_ROW_WIDTH;
+  MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H;
+})();
 
 function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
 
@@ -470,9 +485,10 @@ function buildMapStaticSVG(){
     decoSpots.push({x:MAP_PAD_X-52, y:MAP_PAD_Y+MAP_TOP_EXTRA+row*MAP_CELL_H});
     decoSpots.push({x:MAP_VB_W-MAP_PAD_X+52, y:MAP_PAD_Y+MAP_TOP_EXTRA+row*MAP_CELL_H});
   }
-  for(let col=0; col<MAP_COLS; col++){
-    decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:20});
-    decoSpots.push({x:MAP_PAD_X+col*MAP_CELL_W, y:MAP_VB_H-MAP_PAD_Y+58});
+  for(let i=0; i<6; i++){
+    const x = MAP_PAD_X + (i/5)*MAX_ROW_WIDTH;
+    decoSpots.push({x, y:20});
+    decoSpots.push({x, y:MAP_VB_H-MAP_PAD_Y+58});
   }
   decoSpots.forEach((c,i)=>{
     const lateral = (seededRand(i*9+2)-0.5)*40;
@@ -484,12 +500,12 @@ function buildMapStaticSVG(){
 
   const roadD = smoothPathD(MAP_NODES);
   const road = `
-    <path d="${roadD}" fill="none" stroke="#e9dcc0" stroke-width="28" stroke-linecap="round"/>
-    <path d="${roadD}" fill="none" stroke="#c9b183" stroke-width="22" stroke-linecap="round"/>
-    <path d="${roadD}" fill="none" stroke="#fff8ee" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round" opacity="0.8"/>
+    <path d="${roadD}" fill="none" stroke="#e9dcc0" stroke-width="36" stroke-linecap="round"/>
+    <path d="${roadD}" fill="none" stroke="#c9b183" stroke-width="28" stroke-linecap="round"/>
+    <path d="${roadD}" fill="none" stroke="#fff8ee" stroke-width="4" stroke-dasharray="3 18" stroke-linecap="round" opacity="0.8"/>
   `;
 
-  // 宿場と宿場の間の細かいマス（近道/後退を含む）も、盤面に見える小さな四角として描く
+  // 宿場と宿場の間の細かいマス（近道/後退を含む）も、盤面に見える四角として描く
   let ticks = '';
   WAYPOINTS.forEach(w=>{
     if(w.type==='station') return; // 宿場は別途、大きなパネルで描く
@@ -500,15 +516,15 @@ function buildMapStaticSVG(){
       const bg = isForward ? 'var(--forward-soft)' : 'var(--back-soft)';
       const icon = isForward ? '🐎' : '🌀';
       ticks += `
-        <rect x="${(x-13).toFixed(1)}" y="${(y-13).toFixed(1)}" width="26" height="26" rx="6" fill="${bg}" stroke="${color}" stroke-width="2.5"/>
-        <text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" font-size="14" text-anchor="middle">${icon}</text>
+        <rect x="${(x-23).toFixed(1)}" y="${(y-23).toFixed(1)}" width="46" height="46" rx="10" fill="${bg}" stroke="${color}" stroke-width="3"/>
+        <text x="${x.toFixed(1)}" y="${(y+9).toFixed(1)}" font-size="24" text-anchor="middle">${icon}</text>
       `;
     } else {
-      ticks += `<rect x="${(x-5).toFixed(1)}" y="${(y-5).toFixed(1)}" width="10" height="10" rx="2" fill="#fff8ee" stroke="#c9b183" stroke-width="1.5"/>`;
+      ticks += `<rect x="${(x-13).toFixed(1)}" y="${(y-13).toFixed(1)}" width="26" height="26" rx="5" fill="#fff8ee" stroke="#c9b183" stroke-width="2"/>`;
     }
   });
 
-  const PW = 94, PH = 94; // パネルの大きさ（New Yearすごろく風の四角パネル）
+  const PW = 130, PH = 130; // パネルの大きさ（New Yearすごろく風の四角パネル）
   let banners = '';
   MAP_NODES.forEach((n,i)=>{
     if(n.isGoal) return; // ゴールは中心パネルとして別途描画
@@ -517,10 +533,10 @@ function buildMapStaticSVG(){
     const bx = n.x, by = n.y;
     banners += `
       <g class="map-node" onclick="showStationInfoModal(${i})" style="cursor:pointer;">
-        <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="16" fill="${fill}" stroke="#fff8ee" stroke-width="4"/>
-        <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="16" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-        <text x="${bx.toFixed(1)}" y="${(by-6).toFixed(1)}" font-size="34" text-anchor="middle">${n.icon}</text>
-        <text x="${bx.toFixed(1)}" y="${(by+30).toFixed(1)}" font-size="13" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(n.name)}</text>
+        <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="20" fill="${fill}" stroke="#fff8ee" stroke-width="5"/>
+        <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="20" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+        <text x="${bx.toFixed(1)}" y="${(by-10).toFixed(1)}" font-size="44" text-anchor="middle">${n.icon}</text>
+        <text x="${bx.toFixed(1)}" y="${(by+38).toFixed(1)}" font-size="17" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(n.name)}</text>
       </g>
     `;
   });
@@ -531,35 +547,35 @@ function buildMapStaticSVG(){
     const pos = Number(posStr);
     const sq = BRANCH_POINTS[pos];
     const attach = playerXY(pos);
-    const bx = attach.x, by = attach.y - 140; // 本筋から真上にオフセット
+    const bx = attach.x, by = attach.y - 180; // 本筋から真上にオフセット
     const midY = (attach.y + by) / 2;
-    const goD = `M ${attach.x.toFixed(1)} ${attach.y.toFixed(1)} Q ${(attach.x-16).toFixed(1)} ${midY.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
-    const backD = `M ${bx.toFixed(1)} ${by.toFixed(1)} Q ${(attach.x+16).toFixed(1)} ${midY.toFixed(1)} ${attach.x.toFixed(1)} ${attach.y.toFixed(1)}`;
+    const goD = `M ${attach.x.toFixed(1)} ${attach.y.toFixed(1)} Q ${(attach.x-22).toFixed(1)} ${midY.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
+    const backD = `M ${bx.toFixed(1)} ${by.toFixed(1)} Q ${(attach.x+22).toFixed(1)} ${midY.toFixed(1)} ${attach.x.toFixed(1)} ${attach.y.toFixed(1)}`;
     branches += `
-      <path d="${goD}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="4 6"/>
-      <path d="${backD}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="4 6"/>
+      <path d="${goD}" fill="none" stroke="var(--gold)" stroke-width="4" stroke-dasharray="5 8"/>
+      <path d="${backD}" fill="none" stroke="var(--gold)" stroke-width="4" stroke-dasharray="5 8"/>
       <g class="map-node" onclick="showBranchInfoModal('${sq.key}')" style="cursor:pointer;">
-        <circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="34" fill="var(--gold-soft)" stroke="var(--gold)" stroke-width="4"/>
-        <text x="${bx.toFixed(1)}" y="${(by+8).toFixed(1)}" font-size="26" text-anchor="middle">${sq.icon}</text>
+        <circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="46" fill="var(--gold-soft)" stroke="var(--gold)" stroke-width="5"/>
+        <text x="${bx.toFixed(1)}" y="${(by+11).toFixed(1)}" font-size="34" text-anchor="middle">${sq.icon}</text>
       </g>
-      <text x="${bx.toFixed(1)}" y="${(by+50).toFixed(1)}" font-size="11" font-weight="700" text-anchor="middle" fill="#8a6a1a" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(sq.name)}</text>
+      <text x="${bx.toFixed(1)}" y="${(by+66).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="#8a6a1a" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(sq.name)}</text>
     `;
   });
 
   // 中心のゴールパネル（日光東照宮のイメージ）
   const goalNode = MAP_NODES[MAP_NODES.length-1];
   const gx = goalNode.x, gy = goalNode.y;
-  const GW = 170, GH = 170;
+  const GW = 220, GH = 220;
   const goalPanel = `
     <g class="map-node" onclick="showStationInfoModal(${MAP_NODES.length-1})" style="cursor:pointer;">
-      <rect x="${(gx-GW/2).toFixed(1)}" y="${(gy-GH/2).toFixed(1)}" width="${GW}" height="${GH}" rx="22" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="6"/>
-      <rect x="${(gx-GW/2+8).toFixed(1)}" y="${(gy-GH/2+8).toFixed(1)}" width="${GW-16}" height="${GH-16}" rx="16" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="3 6"/>
-      <text x="${gx.toFixed(1)}" y="${(gy-28).toFixed(1)}" font-size="56" text-anchor="middle">⛩️</text>
-      <text x="${gx.toFixed(1)}" y="${(gy+22).toFixed(1)}" font-size="19" font-weight="800" text-anchor="middle" fill="var(--indigo-900)" font-family="'Shippori Mincho', serif">日光</text>
-      <text x="${gx.toFixed(1)}" y="${(gy+46).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">東照宮</text>
+      <rect x="${(gx-GW/2).toFixed(1)}" y="${(gy-GH/2).toFixed(1)}" width="${GW}" height="${GH}" rx="28" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="7"/>
+      <rect x="${(gx-GW/2+10).toFixed(1)}" y="${(gy-GH/2+10).toFixed(1)}" width="${GW-20}" height="${GH-20}" rx="20" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-dasharray="4 8"/>
+      <text x="${gx.toFixed(1)}" y="${(gy-36).toFixed(1)}" font-size="72" text-anchor="middle">⛩️</text>
+      <text x="${gx.toFixed(1)}" y="${(gy+28).toFixed(1)}" font-size="25" font-weight="800" text-anchor="middle" fill="var(--indigo-900)" font-family="'Shippori Mincho', serif">日光</text>
+      <text x="${gx.toFixed(1)}" y="${(gy+58).toFixed(1)}" font-size="19" font-weight="700" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">東照宮</text>
       <g>
-        <ellipse cx="${(gx+130).toFixed(1)}" cy="${(gy-90).toFixed(1)}" rx="52" ry="28" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="2.5"/>
-        <text x="${(gx+130).toFixed(1)}" y="${(gy-84).toFixed(1)}" font-size="14" font-weight="800" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">到着〜！</text>
+        <ellipse cx="${(gx+165).toFixed(1)}" cy="${(gy-115).toFixed(1)}" rx="66" ry="36" fill="#fff8ee" stroke="var(--vermillion)" stroke-width="3"/>
+        <text x="${(gx+165).toFixed(1)}" y="${(gy-107).toFixed(1)}" font-size="18" font-weight="800" text-anchor="middle" fill="var(--vermillion-dark)" font-family="'Shippori Mincho', serif">到着〜！</text>
       </g>
     </g>
   `;
@@ -660,7 +676,7 @@ let ME = null;
 let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
 let ALL_PLAYERS = [];
 let BOARD_POSTS = [];
-let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1; // 盤面のドラッグ移動・拡大縮小の状態
+let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1.3; // 盤面のドラッグ移動・拡大縮小の状態（初期表示から少し寄る）
 const app = document.getElementById('app');
 
 function clampMapPan(){
@@ -1122,6 +1138,7 @@ function openDiceModal(count, kind, reasonLabel){
     div.remove();
     document.querySelector('.map-wrap')?.scrollIntoView({behavior:'smooth', block:'center'});
     const savePromise = apiSave(PLAYER);
+    await new Promise(res=>setTimeout(res, 2000)); // すごろくが見えてから2秒待ってからコマを動かす
     await animateMyTokenTo(PLAYER.position);
     await savePromise;
 
