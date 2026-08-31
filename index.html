@@ -487,16 +487,40 @@ function playerXY(position){
 // 静的パーツ（地形・道・装飾・宿場バナー・ゴールパネル）は一度だけ組み立てて使い回す
 const MAP_STATION_COLOR = '#28457a'; // 宿場パネルは統一色
 function buildMapStaticSVG(){
-  let terrain = `<rect x="0" y="0" width="${MAP_VB_W}" height="${MAP_VB_H}" fill="#f1ead8"/>`;
-  // 帯（行）の色分けはやめ、道の通り道だけ淡く均一なトーンで敷く
+  let terrain = `
+    <defs>
+      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#eaf3e0"/>
+        <stop offset="100%" stop-color="#f1ead8"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="${MAP_VB_W}" height="${MAP_VB_H}" fill="url(#skyGrad)"/>
+  `;
+  // 遠景の山並み（うっすらとしたシルエット）を各行の上に敷く
+  for(let row=0; row<MAP_ROWS; row++){
+    const y = MAP_PAD_Y + MAP_TOP_EXTRA + row*MAP_CELL_H - MAP_CELL_H/2 + 6;
+    const peaks = 7;
+    let mtnD = `M ${(MAP_PAD_X-140).toFixed(1)} ${(y+70).toFixed(1)}`;
+    for(let p=0; p<=peaks; p++){
+      const px = MAP_PAD_X - 140 + (p/peaks)*(MAP_VB_W - MAP_PAD_X*2 + 280 + 120);
+      const ph = 40 + seededRand(row*13+p)*46;
+      mtnD += ` L ${px.toFixed(1)} ${(y+70-ph).toFixed(1)}`;
+    }
+    mtnD += ` L ${(MAP_PAD_X + MAX_ROW_WIDTH + 140).toFixed(1)} ${(y+70).toFixed(1)} Z`;
+    terrain += `<path d="${mtnD}" fill="#c3d3c8" opacity="0.35"/>`;
+  }
+  // 帯（行）は丘のような柔らかい緑の帯にする
   for(let row=0; row<MAP_ROWS; row++){
     const y = MAP_PAD_Y + MAP_TOP_EXTRA + row*MAP_CELL_H;
-    terrain += `<rect x="${(MAP_PAD_X-90).toFixed(1)}" y="${(y-MAP_CELL_H/2+10).toFixed(1)}" width="${(MAP_VB_W-MAP_PAD_X*2+180).toFixed(1)}" height="${(MAP_CELL_H-20).toFixed(1)}" rx="26" fill="#dde6c9" opacity="0.4"/>`;
+    terrain += `<rect x="${(MAP_PAD_X-90).toFixed(1)}" y="${(y-MAP_CELL_H/2+10).toFixed(1)}" width="${(MAP_VB_W-MAP_PAD_X*2+180).toFixed(1)}" height="${(MAP_CELL_H-20).toFixed(1)}" rx="40" fill="#dbe8c6" opacity="0.55"/>`;
+    // 小川（青いうねった線）を帯の中に1本
+    const riverY = y + MAP_CELL_H/2 - 34;
+    terrain += `<path d="M ${(MAP_PAD_X-40).toFixed(1)} ${riverY.toFixed(1)} Q ${(MAP_PAD_X+MAX_ROW_WIDTH*0.3).toFixed(1)} ${(riverY+26).toFixed(1)} ${(MAP_PAD_X+MAX_ROW_WIDTH*0.6).toFixed(1)} ${(riverY-18).toFixed(1)} T ${(MAP_PAD_X+MAX_ROW_WIDTH+40).toFixed(1)} ${riverY.toFixed(1)}" fill="none" stroke="#bcd6d9" stroke-width="10" opacity="0.5" stroke-linecap="round"/>`;
   }
 
-  // 外周の余白に、木や花などの装飾を散らす
+  // 木・花・雲・鳥などの装飾を、外周だけでなく道の周辺にも豊かに散らす
   let deco = '';
-  const decoEmoji = ['🌳','🌲','🌸','🌼','☁️','🍃','⛰️','🐦'];
+  const decoEmoji = ['🌳','🌲','🌸','🌼','☁️','🍃','⛰️','🐦','🌿','🍀'];
   const decoSpots = [];
   for(let row=0; row<MAP_ROWS; row++){
     decoSpots.push({x:MAP_PAD_X-52, y:MAP_PAD_Y+MAP_TOP_EXTRA+row*MAP_CELL_H});
@@ -507,6 +531,13 @@ function buildMapStaticSVG(){
     decoSpots.push({x, y:20});
     decoSpots.push({x, y:MAP_VB_H-MAP_PAD_Y+58});
   }
+  // 道沿いにも木や花をたくさん散らして、緑豊かな雰囲気にする
+  WAYPOINTS.forEach((w,idx)=>{
+    if(w.type!=='plain' || idx%3!==0) return; // 密集しすぎないよう間引く
+    const {x,y} = playerXY(w.pos);
+    const side = (idx%2===0) ? -1 : 1;
+    decoSpots.push({x: x + side*60, y: y + (seededRand(idx)-0.5)*50});
+  });
   decoSpots.forEach((c,i)=>{
     const lateral = (seededRand(i*9+2)-0.5)*40;
     const vert = (seededRand(i*6+5)-0.5)*40;
