@@ -309,7 +309,7 @@ const GAP_FILLERS = [14,14,14,14,14,10,14,4,10,12,10,12,8,10,10,14,14,14,14,14,1
 const SIDEQUEST_DEFS = [
   {afterGapIndex:0,  offsetInGap:10, key:'asakusa',  name:'田心カフェ', icon:'☕', trivia:'関東近郊でとれる、新鮮・安心・安全な"農薬不使用・減農薬野菜"を店頭で販売。それらの野菜を使った心身にやさしい食事を提供。店内には"つながり"を感じる商品が並びます。', activity:'田心カフェで食事', illustration:'🍜'},
   {afterGapIndex:3,  offsetInGap:4,  key:'tashinfarm', name:'田心ファーム', icon:'🌾', trivia:'「農は、ハタラクの原点！」を合言葉に、埼玉県越谷市で取り組む田心ファーム。土に触れ、種をまき、育て、収穫し、食べる。人や自然、地域とのつながりを感じながら、"はたらく豊かさ"に出会い直す場です。', activity:'田心ファームで畑仕事', illustration:'🥕'},
-  {afterGapIndex:17, offsetInGap:2, key:'shirakawa', name:'新白河ハウス', icon:'🏠', trivia:'いのちのジュンカンを感じ、3割増しの日常が溢れている。共通の体験をしながら、みんなでつくる新白河ハウス。', activity:'新白河ハウスで一泊', illustration:'🛌'},
+  {afterGapIndex:17, offsetInGap:0, key:'shirakawa', name:'新白河ハウス', icon:'🏠', trivia:'いのちのジュンカンを感じ、3割増しの日常が溢れている。共通の体験をしながら、みんなでつくる新白河ハウス。', activity:'新白河ハウスで一泊', illustration:'🛌'},
 ];
 
 // 進む／戻るマス（全体でそれぞれ3つずつ）
@@ -440,7 +440,7 @@ let MAP_NODES = [];
 const N_NODES = MAP_NODES.length;
 const MAP_PAD_X = 180, MAP_PAD_Y = 230;
 const MAP_TOP_EXTRA = 420; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
-const MAP_CELL_H = 580;    // 行から行への縦の間隔（寄り道バブルが上の行と重ならないよう広めに）
+const MAP_CELL_H = 1305;   // 行から行への縦の間隔（背景画像が縦横比2:1のため、全幅で欠けずに収まる高さ）
 const SQUARE_PITCH = 60;   // マス1つあたりの間隔（距離比例のもと。広めに取って重ならないように）
 const MAX_ROW_WIDTH = 2250; // 1行の最大横幅（これを超えたら折り返す）
 
@@ -541,8 +541,9 @@ function buildMapStaticSVG(){
       const clipId = `rowclip_${r}`;
       rowBands += `
         <clipPath id="${clipId}"><rect x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}"/></clipPath>
-        <g clip-path="url(#${clipId})">
-          <image href="${ROW_BG_IMAGES[r]}" x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}" preserveAspectRatio="xMidYMid slice"/>
+        <g clip-path="url(#${clipId})" onclick="showRowBgModal(${r})" style="cursor:zoom-in;">
+          <rect x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}" fill="#eaf3e0"/>
+          <image href="${ROW_BG_IMAGES[r]}" x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>
         </g>
       `;
     } else {
@@ -674,6 +675,22 @@ function buildMapStaticSVG(){
   return `<g class="map-terrain">${terrain}</g><g class="map-deco">${deco}</g><g class="map-road">${road}</g><g class="map-ticks">${ticks}</g><g class="map-banners">${banners}</g><g class="map-branches">${branches}</g><g class="map-goal">${goalPanel}</g>`;
 }
 let MAP_STATIC_SVG = null; // 初回描画時に一度だけ生成
+
+function showRowBgModal(r){
+  const src = ROW_BG_IMAGES[r];
+  if(!src) return;
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card" style="max-width:94vw; width:auto; padding:12px;">
+      <img src="${src}" style="display:block; width:100%; height:auto; border-radius:12px;" />
+      <button class="btn btn-main" id="closeRowBgBtn" style="margin-top:12px;">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('closeRowBgBtn').onclick = ()=> div.remove();
+  div.onclick = (e)=>{ if(e.target===div) div.remove(); };
+}
 
 function showBranchInfoModal(key){
   const sq = SIDEQUEST_DEFS.find(s=>s.key===key);
