@@ -339,6 +339,7 @@ const HOKKORI = [
   '顧問先との〇周年を迎えた',
   '事務所スタッフのうれしい知らせを聞いた',
   '事務所スタッフと楽しい時間をすごせた',
+  'その他のほっこり（なんでもいいよ）',
 ];
 
 const DUMMY_QUOTES = [
@@ -738,6 +739,11 @@ function buildMapTokensSVG(players){
 }
 function initials(name){ return (name||'?').trim().slice(0,2); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function usedBonusToday(type){
+  if(!PLAYER || !PLAYER.history) return false;
+  const t = todayStr();
+  return PLAYER.history.some(h => h.kind === ('bonus_'+type+'_used') && (h.date||'').startsWith(t));
+}
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function sha256Hex(str){
@@ -1024,13 +1030,13 @@ function renderGame(){
         </div>
         <div class="dice-col">
           <div class="dice-col-label">🤝 顧問先獲得ボーナス</div>
-          <div class="dice-col-desc">契約内容に応じてサイコロ1〜5回</div>
-          <button class="btn btn-bonus" id="openClientBonusBtn" ${(phase==='after'||atGoal)?'disabled':''}>申告する</button>
+          <div class="dice-col-desc">契約内容に応じてサイコロ1〜5回（1日1回まで）</div>
+          <button class="btn btn-bonus" id="openClientBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('client'))?'disabled':''}>${usedBonusToday('client') ? '本日は申告済み' : '申告する'}</button>
         </div>
         <div class="dice-col">
           <div class="dice-col-label">☕ ほっこりボーナス</div>
-          <div class="dice-col-desc">うれしい出来事があったらサイコロ1回</div>
-          <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal)?'disabled':''}>申告する</button>
+          <div class="dice-col-desc">うれしい出来事があったらサイコロ1回（1日1回まで）</div>
+          <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('hokkori'))?'disabled':''}>${usedBonusToday('hokkori') ? '本日は申告済み' : '申告する'}</button>
         </div>
       </div>
     </section>
@@ -1107,9 +1113,9 @@ function renderGame(){
   if(mapResetBtn) mapResetBtn.onclick = resetMapView;
   setupMapDrag(document.getElementById('mapSvg'));
   const openClientBonusBtn = document.getElementById('openClientBonusBtn');
-  if(openClientBonusBtn) openClientBonusBtn.onclick = ()=> showChoiceModal('client');
+  if(openClientBonusBtn) openClientBonusBtn.onclick = ()=>{ if(!usedBonusToday('client')) showChoiceModal('client'); };
   const openHokkoriBonusBtn = document.getElementById('openHokkoriBonusBtn');
-  if(openHokkoriBonusBtn) openHokkoriBonusBtn.onclick = ()=> showChoiceModal('hokkori');
+  if(openHokkoriBonusBtn) openHokkoriBonusBtn.onclick = ()=>{ if(!usedBonusToday('hokkori')) showChoiceModal('hokkori'); };
   const rollMainBtn = document.getElementById('rollMainBtn');
   if(rollMainBtn) rollMainBtn.onclick = rollMain;
   const rollMainBtnFloat = document.getElementById('rollMainBtnFloat');
@@ -1189,6 +1195,8 @@ function openDiceModal(count, kind, reasonLabel){
     await new Promise(res=>setTimeout(res, 1050));
 
     if(kind==='main'){ PLAYER.lastRollDate = todayStr(); }
+    else if(kind==='bonus_client'){ PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'bonus_client_used', text: reasonLabel}); }
+    else if(kind==='bonus_hokkori'){ PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'bonus_hokkori_used', text: reasonLabel}); }
     const reasonText = kind==='main' ? '本日のサイコロ' : reasonLabel;
     const arrivals = [];
     let total = 0;
@@ -1328,7 +1336,7 @@ function showEpisodeModal(kind, idx){
     await apiPostBoard(kind, text);
     await refreshBoard();
     div.remove();
-    openDiceModal(opt.amount, 'bonus', opt.label);
+    openDiceModal(opt.amount, 'bonus_'+kind, opt.label);
   };
 }
 
