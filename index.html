@@ -439,9 +439,9 @@ let MAP_NODES = [];
 const N_NODES = MAP_NODES.length;
 const MAP_PAD_X = 100, MAP_PAD_Y = 110;
 const MAP_TOP_EXTRA = 340; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
-const MAP_CELL_H = 300;    // 行から行への縦の間隔
-const SQUARE_PITCH = 50;   // マス1つあたりの間隔（距離比例のもと）
-const MAX_ROW_WIDTH = 3200; // 1行の最大横幅（これを超えたら折り返す）
+const MAP_CELL_H = 430;    // 行から行への縦の間隔（広めに取って重なりを防ぐ）
+const SQUARE_PITCH = 60;   // マス1つあたりの間隔（距離比例のもと。広めに取って重ならないように）
+const MAX_ROW_WIDTH = 2250; // 1行の最大横幅（これを超えたら折り返す）
 
 let MAP_VB_W, MAP_VB_H, MAP_ROWS;
 (function layoutMapNodes(){
