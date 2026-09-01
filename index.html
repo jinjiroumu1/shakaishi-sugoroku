@@ -309,7 +309,7 @@ const GAP_FILLERS = [14,14,14,14,14,10,14,4,10,12,10,12,8,10,10,14,14,14,14,14,1
 const SIDEQUEST_DEFS = [
   {afterGapIndex:0,  offsetInGap:10, key:'asakusa',  name:'田心カフェ（寄り道）', icon:'☕', trivia:'ちょっと寄り道。田心カフェで一息つきました。', activity:'田心カフェで食事', illustration:'🍜'},
   {afterGapIndex:3,  offsetInGap:4,  key:'tashinfarm', name:'田心ファーム（寄り道）', icon:'🌾', trivia:'越ヶ谷宿の先、せんげん台にある田心ファームに立ち寄りました。畑仕事を手伝いました。', activity:'田心ファームで畑仕事', illustration:'🥕'},
-  {afterGapIndex:17, offsetInGap:6, key:'shirakawa', name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', activity:'新白河ハウスで一泊', illustration:'🛌'},
+  {afterGapIndex:17, offsetInGap:2, key:'shirakawa', name:'新白河（寄り道）', icon:'🏠', trivia:'足を延ばして新白河ハウスに立ち寄りました。（日光街道の本筋からは外れる番外編です）', activity:'新白河ハウスで一泊', illustration:'🛌'},
 ];
 
 // 進む／戻るマス（全体でそれぞれ3つずつ）
@@ -437,7 +437,7 @@ let MAP_NODES = [];
 // ジグザグ状（New Yearすごろく風）に配置。マス1つあたりの間隔を一定にし、
 // 宿場と宿場の間の実際の距離（GAP_FILLERSのマス数）に応じて宿場の位置がずれるようにする。
 const N_NODES = MAP_NODES.length;
-const MAP_PAD_X = 180, MAP_PAD_Y = 170;
+const MAP_PAD_X = 180, MAP_PAD_Y = 230;
 const MAP_TOP_EXTRA = 420; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
 const MAP_CELL_H = 580;    // 行から行への縦の間隔（寄り道バブルが上の行と重ならないよう広めに）
 const SQUARE_PITCH = 60;   // マス1つあたりの間隔（距離比例のもと。広めに取って重ならないように）
