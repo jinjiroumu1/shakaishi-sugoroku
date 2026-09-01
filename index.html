@@ -598,35 +598,36 @@ function buildMapStaticSVG(){
     `;
   });
 
-  // 寄り道の分岐バブル（赤い矢印で行き、青い矢印で本筋に戻る）
-  let branches = `
-    <defs>
-      <marker id="arrowRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#d64545"/>
-      </marker>
-      <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b6fb5"/>
-      </marker>
-    </defs>
-  `;
+  // 寄り道の分岐バブル（行き・帰りは別ルート＝2本のカーブ。見た目は本筋と同じ白いマス）
+  function quadAt(p0, ctrl, p1, t){
+    const mt = 1-t;
+    return { x: mt*mt*p0.x + 2*mt*t*ctrl.x + t*t*p1.x, y: mt*mt*p0.y + 2*mt*t*ctrl.y + t*t*p1.y };
+  }
+  let branches = '';
   Object.keys(BRANCH_POINTS).forEach(posStr=>{
     const pos = Number(posStr);
     const sq = BRANCH_POINTS[pos];
     const attach = playerXY(pos);
     const bx = attach.x - 15, by = attach.y - 330; // バブルの位置（本筋からやや左上）
-    // 行き（赤）：本筋からバブルへ、右に膨らむカーブ
+    // 行き：本筋からバブルへ、右に膨らむカーブ
     const goStart = {x: attach.x - 40, y: attach.y - 10};
     const goCtrl = {x: attach.x + 110, y: (attach.y + by)/2};
     const goEnd = {x: bx + 30, y: by + 40};
-    const goD = `M ${goStart.x.toFixed(1)} ${goStart.y.toFixed(1)} Q ${goCtrl.x.toFixed(1)} ${goCtrl.y.toFixed(1)} ${goEnd.x.toFixed(1)} ${goEnd.y.toFixed(1)}`;
-    // 帰り（青）：バブルから本筋の少し離れた場所へ、左に膨らむカーブ（同じマスに戻らなくてOK）
+    // 帰り：バブルから本筋の少し離れた場所へ、左に膨らむカーブ（同じマスに戻らなくてOK）
     const backStart = {x: bx - 30, y: by + 45};
     const backCtrl = {x: attach.x - 130, y: (attach.y + by)/2};
     const backEnd = {x: attach.x + 70, y: attach.y - 10};
-    const backD = `M ${backStart.x.toFixed(1)} ${backStart.y.toFixed(1)} Q ${backCtrl.x.toFixed(1)} ${backCtrl.y.toFixed(1)} ${backEnd.x.toFixed(1)} ${backEnd.y.toFixed(1)}`;
+    let routeTiles = '';
+    const tileCount = 6;
+    for(let k=1; k<tileCount; k++){
+      const t = k/tileCount;
+      const g = quadAt(goStart, goCtrl, goEnd, t);
+      const b = quadAt(backStart, backCtrl, backEnd, t);
+      routeTiles += `<rect x="${(g.x-26).toFixed(1)}" y="${(g.y-26).toFixed(1)}" width="52" height="52" rx="9" fill="#fff8ee" stroke="#c9b183" stroke-width="2.5"/>`;
+      routeTiles += `<rect x="${(b.x-26).toFixed(1)}" y="${(b.y-26).toFixed(1)}" width="52" height="52" rx="9" fill="#fff8ee" stroke="#c9b183" stroke-width="2.5"/>`;
+    }
     branches += `
-      <path d="${goD}" fill="none" stroke="#d64545" stroke-width="6" stroke-linecap="round" marker-end="url(#arrowRed)"/>
-      <path d="${backD}" fill="none" stroke="#3b6fb5" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 12" marker-end="url(#arrowBlue)"/>
+      ${routeTiles}
       <g class="map-node" onclick="showBranchInfoModal('${sq.key}')" style="cursor:pointer;">
         <defs><clipPath id="clip_${sq.key}"><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="64"/></clipPath></defs>
         <image href="${STATION_IMAGES[sq.key]}" x="${(bx-70).toFixed(1)}" y="${(by-70).toFixed(1)}" width="140" height="140" clip-path="url(#clip_${sq.key})" preserveAspectRatio="xMidYMid slice"/>
