@@ -589,6 +589,7 @@ function buildMapStaticSVG(){
     const clipId = `clip_${i}`;
     banners += `
       <g class="map-node" onclick="showStationInfoModal(${i})" style="cursor:pointer;">
+        <rect x="${(bx-PW/2-8).toFixed(1)}" y="${(by-PH/2-8).toFixed(1)}" width="${PW+16}" height="${PH+16}" rx="26" fill="none" stroke="#8a5a2b" stroke-width="9"/>
         <defs><clipPath id="${clipId}"><rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="20"/></clipPath></defs>
         <image href="${img}" x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>
         <rect x="${(bx-PW/2).toFixed(1)}" y="${(by-PH/2).toFixed(1)}" width="${PW}" height="${PH}" rx="20" fill="none" stroke="#fff8ee" stroke-width="5"/>
@@ -597,28 +598,35 @@ function buildMapStaticSVG(){
     `;
   });
 
-  // 寄り道の分岐バブル（本筋から真上に、本道と同じ見た目の一本道でつなぐ）
-  let branches = '';
+  // 寄り道の分岐バブル（赤い矢印で行き、青い矢印で本筋に戻る）
+  let branches = `
+    <defs>
+      <marker id="arrowRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#d64545"/>
+      </marker>
+      <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b6fb5"/>
+      </marker>
+    </defs>
+  `;
   Object.keys(BRANCH_POINTS).forEach(posStr=>{
     const pos = Number(posStr);
     const sq = BRANCH_POINTS[pos];
     const attach = playerXY(pos);
-    const bx = attach.x, by = attach.y - 330; // 本筋から真上にオフセット
-    const roadD = `M ${attach.x.toFixed(1)} ${attach.y.toFixed(1)} L ${bx.toFixed(1)} ${by.toFixed(1)}`;
-    // 本筋の道と同じ塗り方（太いベージュ＋内側の点線）にして、道であることを分かりやすくする
-    let branchTicks = '';
-    const dist = attach.y - by;
-    const count = Math.max(2, Math.round(dist / 70));
-    for(let k=1; k<count; k++){
-      const t = k/count;
-      const tx = attach.x, ty = attach.y - dist*t;
-      branchTicks += `<rect x="${(tx-26).toFixed(1)}" y="${(ty-26).toFixed(1)}" width="52" height="52" rx="9" fill="#fff8ee" stroke="#c9b183" stroke-width="2.5"/>`;
-    }
+    const bx = attach.x - 15, by = attach.y - 330; // バブルの位置（本筋からやや左上）
+    // 行き（赤）：本筋からバブルへ、右に膨らむカーブ
+    const goStart = {x: attach.x - 40, y: attach.y - 10};
+    const goCtrl = {x: attach.x + 110, y: (attach.y + by)/2};
+    const goEnd = {x: bx + 30, y: by + 40};
+    const goD = `M ${goStart.x.toFixed(1)} ${goStart.y.toFixed(1)} Q ${goCtrl.x.toFixed(1)} ${goCtrl.y.toFixed(1)} ${goEnd.x.toFixed(1)} ${goEnd.y.toFixed(1)}`;
+    // 帰り（青）：バブルから本筋の少し離れた場所へ、左に膨らむカーブ（同じマスに戻らなくてOK）
+    const backStart = {x: bx - 30, y: by + 45};
+    const backCtrl = {x: attach.x - 130, y: (attach.y + by)/2};
+    const backEnd = {x: attach.x + 70, y: attach.y - 10};
+    const backD = `M ${backStart.x.toFixed(1)} ${backStart.y.toFixed(1)} Q ${backCtrl.x.toFixed(1)} ${backCtrl.y.toFixed(1)} ${backEnd.x.toFixed(1)} ${backEnd.y.toFixed(1)}`;
     branches += `
-      <path d="${roadD}" fill="none" stroke="#e9dcc0" stroke-width="30" stroke-linecap="round"/>
-      <path d="${roadD}" fill="none" stroke="#dcc98f" stroke-width="22" stroke-linecap="round"/>
-      <path d="${roadD}" fill="none" stroke="#fff8ee" stroke-width="3" stroke-dasharray="3 16" stroke-linecap="round" opacity="0.8"/>
-      ${branchTicks}
+      <path d="${goD}" fill="none" stroke="#d64545" stroke-width="6" stroke-linecap="round" marker-end="url(#arrowRed)"/>
+      <path d="${backD}" fill="none" stroke="#3b6fb5" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 12" marker-end="url(#arrowBlue)"/>
       <g class="map-node" onclick="showBranchInfoModal('${sq.key}')" style="cursor:pointer;">
         <defs><clipPath id="clip_${sq.key}"><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="64"/></clipPath></defs>
         <image href="${STATION_IMAGES[sq.key]}" x="${(bx-70).toFixed(1)}" y="${(by-70).toFixed(1)}" width="140" height="140" clip-path="url(#clip_${sq.key})" preserveAspectRatio="xMidYMid slice"/>
@@ -741,7 +749,7 @@ let ME = null;
 let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
 let ALL_PLAYERS = [];
 let BOARD_POSTS = [];
-let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1.3; // 盤面のドラッグ移動・拡大縮小の状態（初期表示から少し寄る）
+let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1; // 盤面のドラッグ移動・拡大縮小の状態（更新・ログイン時は全体表示）
 const app = document.getElementById('app');
 
 function clampMapPan(){
@@ -911,6 +919,7 @@ async function join(nickname, password){
   }
   ME = nickname;
   PLAYER = Object.assign({}, r.player, {passwordHash: hash});
+  MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0; // ログイン時は全体表示から
   await refreshAll();
   renderGame();
 }
