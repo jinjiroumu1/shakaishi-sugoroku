@@ -251,6 +251,7 @@
   .board-cheer-btn:disabled{opacity:0.5; cursor:not-allowed;}
   .cheer-compose{display:flex; gap:6px; margin-top:8px;}
   .cheer-compose input{flex:1; padding:6px 9px; border-radius:8px; border:1px solid var(--paper-line); font-size:0.75rem;}
+  .cheer-claim-banner{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:rgba(199,154,62,0.15); border:1px solid var(--gold); border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:0.85rem; color:var(--indigo-900); font-weight:700;}
 
   /* ---------- 1対1メッセージ ---------- */
   .msg-layout{display:flex; flex-direction:column; gap:12px;}
@@ -1233,9 +1234,9 @@ function renderGame(){
           <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('hokkori'))?'disabled':''}>${usedBonusToday('hokkori') ? '本日は申告済み' : '申告する'}</button>
         </div>
         <div class="dice-col">
-          <div class="dice-col-label">🎉 応援ボーナス</div>
+          <div class="dice-col-label">🎉 応援する</div>
           <div class="dice-col-desc">みんなの掲示板で応援してもらうと1件につきサイコロ1回</div>
-          <button class="btn btn-bonus" id="openCheerBonusBtn" ${(phase==='after'||atGoal||availableCheerBonusCount()<=0)?'disabled':''}>${availableCheerBonusCount()>0 ? `振る（${availableCheerBonusCount()}回分）` : '未使用分なし'}</button>
+          <button class="btn btn-bonus" id="openCheerBonusBtn">掲示板へ</button>
         </div>
       </div>
     </section>
@@ -1258,9 +1259,15 @@ function renderGame(){
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="boardPanel">
       <h2 class="panel-title">📋 みんなの掲示板 <span class="tag">${BOARD_POSTS.length}件</span></h2>
       <p class="panel-desc">顧問先獲得・ほっこりボーナスを申告したときのエピソードが、ここに流れます。応援すると、相手に1回分のボーナスサイコロが届きます。</p>
+      ${availableCheerBonusCount()>0 ? `
+        <div class="cheer-claim-banner">
+          <span>🎉 ${availableCheerBonusCount()}件分の応援ボーナスサイコロがあります！</span>
+          <button class="btn btn-bonus btn-small" id="claimCheerBonusBtn" ${(phase==='after'||atGoal)?'disabled':''}>振る（${availableCheerBonusCount()}回分）</button>
+        </div>
+      ` : ''}
       <div class="board-grid">
         ${BOARD_POSTS.slice(0,50).map(p=>{
           const postCheers = ALL_CHEERS.filter(c=>c.postTimestamp===p.timestamp);
@@ -1381,7 +1388,9 @@ function renderGame(){
   const openHokkoriBonusBtn = document.getElementById('openHokkoriBonusBtn');
   if(openHokkoriBonusBtn) openHokkoriBonusBtn.onclick = ()=>{ if(!usedBonusToday('hokkori')) showChoiceModal('hokkori'); };
   const openCheerBonusBtn = document.getElementById('openCheerBonusBtn');
-  if(openCheerBonusBtn) openCheerBonusBtn.onclick = claimCheerBonus;
+  if(openCheerBonusBtn) openCheerBonusBtn.onclick = ()=> document.getElementById('boardPanel')?.scrollIntoView({behavior:'smooth', block:'start'});
+  const claimCheerBonusBtn = document.getElementById('claimCheerBonusBtn');
+  if(claimCheerBonusBtn) claimCheerBonusBtn.onclick = claimCheerBonus;
   document.querySelectorAll('.cheerOpenBtn').forEach(btn=>{
     btn.onclick = ()=>{
       const postTs = btn.getAttribute('data-post-ts');
