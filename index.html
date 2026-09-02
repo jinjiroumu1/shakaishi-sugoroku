@@ -308,8 +308,8 @@ const GAP_FILLERS = [14,14,14,14,14,10,14,4,10,12,10,12,8,10,10,14,14,14,14,14,1
 // 寄り道マス（本筋から分岐する場所。あとで自由に追加できます）
 const SIDEQUEST_DEFS = [
   {afterGapIndex:0,  offsetInGap:10, key:'asakusa',  name:'田心カフェ', icon:'☕', trivia:'関東近郊でとれる、新鮮・安心・安全な"農薬不使用・減農薬野菜"を店頭で販売。それらの野菜を使った心身にやさしい食事を提供。店内には"つながり"を感じる商品が並びます。', activity:'田心カフェで食事', illustration:'🍜'},
-  {afterGapIndex:3,  offsetInGap:4,  key:'tashinfarm', name:'田心ファーム', icon:'🌾', trivia:'「農は、ハタラクの原点！」を合言葉に、埼玉県越谷市で取り組む田心ファーム。土に触れ、種をまき、育て、収穫し、食べる。人や自然、地域とのつながりを感じながら、"はたらく豊かさ"に出会い直す場です。', activity:'田心ファームで畑仕事', illustration:'🥕'},
-  {afterGapIndex:17, offsetInGap:0, key:'shirakawa', name:'新白河ハウス', icon:'🏠', trivia:'いのちのジュンカンを感じ、3割増しの日常が溢れている。共通の体験をしながら、みんなでつくる新白河ハウス。', activity:'新白河ハウスで一泊', illustration:'🛌'},
+  {afterGapIndex:3,  offsetInGap:0,  key:'tashinfarm', name:'田心ファーム', icon:'🌾', trivia:'「農は、ハタラクの原点！」を合言葉に、埼玉県越谷市で取り組む田心ファーム。土に触れ、種をまき、育て、収穫し、食べる。人や自然、地域とのつながりを感じながら、"はたらく豊かさ"に出会い直す場です。', activity:'田心ファームで畑仕事', illustration:'🥕'},
+  {afterGapIndex:17, offsetInGap:3, key:'shirakawa', name:'新白河ハウス', icon:'🏠', trivia:'いのちのジュンカンを感じ、3割増しの日常が溢れている。共通の体験をしながら、みんなでつくる新白河ハウス。', activity:'新白河ハウスで一泊', illustration:'🛌'},
 ];
 
 // 進む／戻るマス（全体でそれぞれ3つずつ）
@@ -440,7 +440,7 @@ let MAP_NODES = [];
 const N_NODES = MAP_NODES.length;
 const MAP_PAD_X = 180, MAP_PAD_Y = 230;
 const MAP_TOP_EXTRA = 420; // 寄り道バブルが真上に伸びても切れないための、上だけの余白
-const MAP_CELL_H = 1305;   // 行から行への縦の間隔（背景画像が縦横比2:1のため、全幅で欠けずに収まる高さ）
+const MAP_CELL_H = 435;    // 行から行への縦の間隔（画像の高さとは分離。間隔だけ縮めて画像は次の行と少し重ねる）
 const SQUARE_PITCH = 60;   // マス1つあたりの間隔（距離比例のもと。広めに取って重ならないように）
 const MAX_ROW_WIDTH = 2250; // 1行の最大横幅（これを超えたら折り返す）
 
@@ -464,7 +464,8 @@ let MAP_VB_W, MAP_VB_H, MAP_ROWS;
   }
   MAP_ROWS = row + 1;
   MAP_VB_W = MAP_PAD_X*2 + MAX_ROW_WIDTH;
-  MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H;
+  const rowImgH = MAP_VB_W / 2.0; // 背景画像の実際の高さ（縦横比2:1固定、間隔とは別）
+  MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H + (rowImgH - MAP_CELL_H);
 })();
 
 function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
@@ -529,25 +530,23 @@ const ROW_BG_IMAGES = {
 function buildMapStaticSVG(){
   // 背景は行ごとに割り当てた画像で敷く。未割り当ての行は承認済みの丘タイルで補う
   const BG_IMG_W = 900, BG_IMG_H = 490;
+  const rowImgH = MAP_VB_W / 2.0; // 画像の実際の高さは固定（縦横比2:1、間隔よりずっと大きく、次の行と重なる）
   const rowCenters = [];
   for(let r=0; r<MAP_ROWS; r++) rowCenters.push(MAP_PAD_Y + MAP_TOP_EXTRA + r*MAP_CELL_H);
-  const rowBoundaries = [0];
-  for(let r=1; r<MAP_ROWS; r++) rowBoundaries.push((rowCenters[r-1]+rowCenters[r])/2);
-  rowBoundaries.push(MAP_VB_H);
   let rowBands = '';
   for(let r=0; r<MAP_ROWS; r++){
-    const bandTop = rowBoundaries[r], bandBottom = rowBoundaries[r+1], bandH = bandBottom - bandTop;
+    const imgTop = rowCenters[r] - rowImgH/2;
     if(ROW_BG_IMAGES[r]){
       const clipId = `rowclip_${r}`;
       rowBands += `
-        <clipPath id="${clipId}"><rect x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}"/></clipPath>
+        <clipPath id="${clipId}"><rect x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}"/></clipPath>
         <g clip-path="url(#${clipId})" onclick="showRowBgModal(${r})" style="cursor:zoom-in;">
-          <rect x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}" fill="#eaf3e0"/>
-          <image href="${ROW_BG_IMAGES[r]}" x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>
+          <rect x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}" fill="#eaf3e0"/>
+          <image href="${ROW_BG_IMAGES[r]}" x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>
         </g>
       `;
     } else {
-      rowBands += `<rect x="0" y="${bandTop.toFixed(1)}" width="${MAP_VB_W}" height="${bandH.toFixed(1)}" fill="url(#bgTile)"/>`;
+      rowBands += `<rect x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}" fill="url(#bgTile)"/>`;
     }
   }
   let terrain = `
