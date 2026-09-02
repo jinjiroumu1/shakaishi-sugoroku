@@ -464,7 +464,7 @@ let MAP_VB_W, MAP_VB_H, MAP_ROWS;
   }
   MAP_ROWS = row + 1;
   MAP_VB_W = MAP_PAD_X*2 + MAX_ROW_WIDTH;
-  MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H;
+  MAP_VB_H = MAP_PAD_Y + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H + MAP_CELL_H/2 + MAP_PAD_Y;
 })();
 
 function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
@@ -533,7 +533,7 @@ function buildMapStaticSVG(){
   for(let r=0; r<MAP_ROWS; r++) rowCenters.push(MAP_PAD_Y + MAP_TOP_EXTRA + r*MAP_CELL_H);
   const rowBoundaries = [0];
   for(let r=1; r<MAP_ROWS; r++) rowBoundaries.push((rowCenters[r-1]+rowCenters[r])/2);
-  rowBoundaries.push(MAP_VB_H);
+  rowBoundaries.push(rowCenters[MAP_ROWS-1] + MAP_CELL_H/2); // 最後の行も他と同じ高さの帯にする
   let rowBands = '';
   for(let r=0; r<MAP_ROWS; r++){
     const bandTop = rowBoundaries[r], bandBottom = rowBoundaries[r+1], bandH = bandBottom - bandTop;
