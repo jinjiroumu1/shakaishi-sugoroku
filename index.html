@@ -1079,6 +1079,34 @@ function checkNewMessagesPopup(){
   }catch(e){}
 }
 
+// 未消費の応援（＝まだサイコロにしていない祝福・応援）がある間は、ログイン・更新のたびに知らせる
+function checkNewCheersPopup(){
+  if(!ME || !PLAYER) return;
+  const count = availableCheerBonusCount();
+  if(count <= 0) return;
+  const received = ALL_CHEERS.filter(c => c.postNickname===ME);
+  const used = new Set((PLAYER.history||[]).filter(h=>h.kind==='cheer_bonus_used').map(h=>h.text));
+  const unclaimed = received.filter(c=>!used.has(c.timestamp));
+  const senders = [...new Set(unclaimed.map(c=>c.cheerer))];
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <button class="modal-close-x" id="cheerNoticeCloseBtn" aria-label="閉じる">✕</button>
+      <div class="stamp side">🎉</div>
+      <h3>祝福・応援メッセージが届いています</h3>
+      <p class="quote">${escapeHtml(senders.join('、'))}さんから、祝福・応援メッセージが届いています。</p>
+      <div class="board-cheers" style="text-align:left; margin-bottom:14px;">
+        ${unclaimed.map(c=>`<div class="board-cheer-item">🎉 <b>${escapeHtml(c.cheerer)}</b>：${escapeHtml(c.message||'応援しています！')}</div>`).join('')}
+      </div>
+      <button class="btn btn-main" id="cheerNoticeRollBtn">🎲 サイコロを振る（${count}回分）</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('cheerNoticeCloseBtn').onclick = ()=> div.remove();
+  document.getElementById('cheerNoticeRollBtn').onclick = ()=>{ div.remove(); claimCheerBonus(); };
+}
+
 /* ============ 参加画面（ニックネーム＋パスワード） ============ */
 function renderJoin(){
   app.innerHTML = `
@@ -1123,6 +1151,7 @@ async function join(nickname, password){
   MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0; // ログイン時は全体表示から
   await refreshAll();
   checkNewMessagesPopup();
+  checkNewCheersPopup();
   renderGame();
 }
 
@@ -1234,9 +1263,9 @@ function renderGame(){
           <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('hokkori'))?'disabled':''}>${usedBonusToday('hokkori') ? '本日は申告済み' : '申告する'}</button>
         </div>
         <div class="dice-col">
-          <div class="dice-col-label">🎉 応援する</div>
+          <div class="dice-col-label">🎉 仲間を祝福・応援</div>
           <div class="dice-col-desc">みんなの掲示板で応援してもらうと1件につきサイコロ1回</div>
-          <button class="btn btn-bonus" id="openCheerBonusBtn">掲示板へ</button>
+          <button class="btn btn-bonus" id="openCheerBonusBtn">仲間を祝福</button>
         </div>
       </div>
     </section>
