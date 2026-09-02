@@ -848,10 +848,11 @@ function resetMapView(){
 }
 function setupMapDrag(svgEl){
   if(!svgEl) return;
-  let dragging = false, start = {x:0,y:0}, panStart = {x:0,y:0}, moved = 0;
+  let dragging = false, captured = false, start = {x:0,y:0}, panStart = {x:0,y:0}, moved = 0, pid = null;
   svgEl.addEventListener('pointerdown', e=>{
-    dragging = true; moved = 0; start = {x:e.clientX, y:e.clientY}; panStart = {x:MAP_PAN_X, y:MAP_PAN_Y};
-    svgEl.setPointerCapture(e.pointerId);
+    dragging = true; captured = false; moved = 0; pid = e.pointerId;
+    start = {x:e.clientX, y:e.clientY}; panStart = {x:MAP_PAN_X, y:MAP_PAN_Y};
+    // ここでは まだ pointer capture しない（単純なタップ＝パネルのクリックを邪魔しないため）
   });
   svgEl.addEventListener('pointermove', e=>{
     if(!dragging) return;
@@ -859,11 +860,13 @@ function setupMapDrag(svgEl){
     const factor = MAP_VB_W / rect.width;
     const dx = e.clientX - start.x, dy = e.clientY - start.y;
     moved = Math.max(moved, Math.hypot(dx, dy));
+    if(!captured && moved > 6){ captured = true; try{ svgEl.setPointerCapture(pid); }catch(err){} }
+    if(!captured) return; // 動きがまだ小さいうちはパン処理をしない
     MAP_PAN_X = panStart.x + dx * factor;
     MAP_PAN_Y = panStart.y + dy * factor;
     applyMapTransform();
   });
-  const endDrag = ()=>{ dragging = false; };
+  const endDrag = (e)=>{ dragging = false; try{ if(captured && e && e.pointerId!=null) svgEl.releasePointerCapture(e.pointerId); }catch(err){} captured = false; };
   svgEl.addEventListener('pointerup', endDrag);
   svgEl.addEventListener('pointerleave', endDrag);
   svgEl.addEventListener('wheel', e=>{
