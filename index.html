@@ -1284,12 +1284,7 @@ function renderGame(){
             ${!isMine ? (
               alreadyCheeredByMe
                 ? `<div class="board-cheer-btn" style="opacity:0.6;">応援済みです</div>`
-                : `
-                  <div class="cheer-compose">
-                    <input type="text" class="cheerMsgInput" data-post-ts="${safeTs}" data-post-nick="${safeNick}" placeholder="応援メッセージ（任意）" maxlength="100">
-                    <button class="board-cheer-btn cheerSendBtn" data-post-ts="${safeTs}" data-post-nick="${safeNick}">🎉 応援する</button>
-                  </div>
-                `
+                : `<button class="board-cheer-btn cheerOpenBtn" data-post-ts="${safeTs}" data-post-nick="${safeNick}">🎉 応援する</button>`
             ) : ''}
           </div>
         `;}).join('') || '<div class="board-empty">まだ投稿がありません。</div>'}
@@ -1387,22 +1382,11 @@ function renderGame(){
   if(openHokkoriBonusBtn) openHokkoriBonusBtn.onclick = ()=>{ if(!usedBonusToday('hokkori')) showChoiceModal('hokkori'); };
   const openCheerBonusBtn = document.getElementById('openCheerBonusBtn');
   if(openCheerBonusBtn) openCheerBonusBtn.onclick = claimCheerBonus;
-  document.querySelectorAll('.cheerSendBtn').forEach(btn=>{
-    btn.onclick = async ()=>{
+  document.querySelectorAll('.cheerOpenBtn').forEach(btn=>{
+    btn.onclick = ()=>{
       const postTs = btn.getAttribute('data-post-ts');
       const postNick = btn.getAttribute('data-post-nick');
-      const input = document.querySelector(`.cheerMsgInput[data-post-ts="${CSS.escape(postTs)}"]`);
-      const message = (input && input.value || '').trim();
-      btn.disabled = true;
-      const r = await apiSendCheer(postTs, postNick, message);
-      if(r && r.ok){
-        await refreshCheers();
-        renderGame();
-      } else {
-        btn.disabled = false;
-        if(r && r.error==='already_cheered'){ alert('この投稿には、すでに応援済みです。'); await refreshCheers(); renderGame(); }
-        else alert('応援の送信に失敗しました。時間をおいて、もう一度お試しください。');
-      }
+      showCheerComposeModal(postTs, postNick);
     };
   });
   const rollMainBtn = document.getElementById('rollMainBtn');
@@ -1597,6 +1581,38 @@ async function rollMain(){
   const t = todayStr();
   if(PLAYER.lastRollDate === t || PLAYER.position>=GOAL_POS) return;
   openDiceModal(1, 'main', '本日のサイコロ');
+}
+
+function showCheerComposeModal(postTs, postNick){
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <button class="modal-close-x" id="cheerModalCloseBtn" aria-label="閉じる">✕</button>
+      <div class="stamp side">🎉</div>
+      <h3>${escapeHtml(postNick)}さんを応援する</h3>
+      <p class="note" style="margin-bottom:10px;">応援すると、相手にボーナスサイコロが1回分届きます。</p>
+      <input type="text" id="cheerModalInput" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--paper-line); font-size:0.85rem; margin-bottom:14px; box-sizing:border-box;" placeholder="応援メッセージ（任意）" maxlength="100">
+      <button class="btn btn-main" id="cheerModalSendBtn">🎉 応援する</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('cheerModalCloseBtn').onclick = ()=> div.remove();
+  document.getElementById('cheerModalSendBtn').onclick = async ()=>{
+    const btn = document.getElementById('cheerModalSendBtn');
+    const message = (document.getElementById('cheerModalInput').value || '').trim();
+    btn.disabled = true;
+    const r = await apiSendCheer(postTs, postNick, message);
+    if(r && r.ok){
+      div.remove();
+      await refreshAll(); // 掲示板・応援など全体を取り直す
+      renderGame();
+    } else {
+      btn.disabled = false;
+      if(r && r.error==='already_cheered'){ alert('この投稿には、すでに応援済みです。'); div.remove(); await refreshAll(); renderGame(); }
+      else alert('応援の送信に失敗しました。時間をおいて、もう一度お試しください。');
+    }
+  };
 }
 
 function claimCheerBonus(){
