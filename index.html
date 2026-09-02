@@ -242,6 +242,18 @@
   .board-empty{grid-column:1/-1; font-size:0.8rem; color:#a99a72; text-align:center; padding:10px;}
   @media (max-width:720px){ .board-grid{grid-template-columns:1fr;} }
 
+  /* ---------- 1対1メッセージ ---------- */
+  .msg-layout{display:flex; flex-direction:column; gap:12px;}
+  .msg-partner-select{width:100%; max-width:280px; padding:9px 12px; border-radius:10px; border:1px solid var(--paper-line); background:var(--paper); font-size:0.85rem; color:var(--indigo-900);}
+  .msg-thread{max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:12px; background:var(--paper); border-radius:10px; border:1px solid var(--paper-line);}
+  .msg-bubble{max-width:78%; padding:8px 12px; border-radius:14px; font-size:0.82rem; line-height:1.5;}
+  .msg-bubble.theirs{align-self:flex-start; background:#fff8ee; border:1px solid var(--paper-line); border-bottom-left-radius:4px;}
+  .msg-bubble.mine{align-self:flex-end; background:var(--indigo-700); color:#fff8ee; border-bottom-right-radius:4px;}
+  .msg-bubble-text{white-space:pre-wrap; word-break:break-word;}
+  .msg-bubble-time{font-size:0.6rem; opacity:0.65; margin-top:4px; text-align:right;}
+  .msg-compose{display:flex; gap:8px;}
+  .msg-compose input{flex:1; padding:9px 12px; border-radius:10px; border:1px solid var(--paper-line); font-size:0.85rem;}
+
   .join-screen{max-width:420px; margin:60px auto; background:#fffdf7; border:1px solid var(--paper-line); border-radius:16px; padding:30px 26px; text-align:center;}
   .join-screen h1{font-family:'Shippori Mincho', serif; color:var(--indigo-900); font-size:1.4rem; margin-bottom:6px;}
   .join-screen p{font-size:0.82rem; color:#7c7360; margin-bottom:18px; line-height:1.6;}
@@ -838,6 +850,8 @@ let ME = null;
 let PLAYER = null;      // {nickname, position, lastRollDate, arrivedAt, history, passwordHash}
 let ALL_PLAYERS = [];
 let BOARD_POSTS = [];
+let ALL_MESSAGES = [];
+let MSG_PARTNER = null; // 今どの相手とのスレッドを開いているか
 let MAP_PAN_X = 0, MAP_PAN_Y = 0, MAP_SCALE = 1; // 盤面のドラッグ移動・拡大縮小の状態（更新・ログイン時は全体表示）
 const app = document.getElementById('app');
 
@@ -970,6 +984,20 @@ async function refreshBoard(){
   BOARD_POSTS = await loadBoard();
 }
 
+async function apiSendMessage(to, text){
+  try{ return await apiCall('sendMessage', {nickname: ME, passwordHash: PLAYER.passwordHash, to, text}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
+async function loadMessages(){
+  try{
+    const r = await apiCall('listMessages', {nickname: ME, passwordHash: PLAYER.passwordHash});
+    return (r && r.ok) ? r.messages : [];
+  }catch(e){ return []; }
+}
+async function refreshMessages(){
+  ALL_MESSAGES = await loadMessages();
+}
+
 /* ============ 参加画面（ニックネーム＋パスワード） ============ */
 function renderJoin(){
   app.innerHTML = `
@@ -1022,6 +1050,7 @@ async function refreshAll(){
   // 自分自身の詳細な状態（PLAYER）はローカルの値をそのまま使う。
   ALL_PLAYERS = await loadAllPlayers();
   BOARD_POSTS = await loadBoard();
+  ALL_MESSAGES = await loadMessages();
 }
 // テスト中はtrueにしておくと、開始日(9/4)前でもサイコロを振れます。
 // 本番開始前にfalseに戻し、スプレッドシートのテストデータも削除してください。
@@ -1164,6 +1193,33 @@ function renderGame(){
     </section>
 
     <section class="panel">
+      <h2 class="panel-title">✉️ メッセージ <span class="tag">${(()=>{ const s=new Set(); ALL_MESSAGES.forEach(m=>{ if(m.from!==ME) s.add(m.from); if(m.to!==ME) s.add(m.to); }); s.delete(ME); return s.size; })()}人とやり取り</span></h2>
+      <p class="panel-desc">参加者と1対1でメッセージを送り合えます。内容は相手とあなただけに見えます。</p>
+      <div class="msg-layout">
+        <div class="msg-partner-list">
+          <select id="msgPartnerSelect" class="msg-partner-select">
+            <option value="">相手を選ぶ…</option>
+            ${ALL_PLAYERS.filter(p=>p.nickname!==ME).map(p=>`<option value="${escapeHtml(p.nickname)}" ${MSG_PARTNER===p.nickname?'selected':''}>${escapeHtml(p.nickname)}</option>`).join('')}
+          </select>
+        </div>
+        ${MSG_PARTNER ? `
+          <div class="msg-thread" id="msgThread">
+            ${ALL_MESSAGES.filter(m=>(m.from===ME && m.to===MSG_PARTNER) || (m.from===MSG_PARTNER && m.to===ME)).map(m=>`
+              <div class="msg-bubble ${m.from===ME?'mine':'theirs'}">
+                <div class="msg-bubble-text">${escapeHtml(m.text)}</div>
+                <div class="msg-bubble-time">${(m.timestamp||'').slice(0,16).replace('T',' ')}</div>
+              </div>
+            `).join('') || '<div class="board-empty">まだメッセージがありません。</div>'}
+          </div>
+          <div class="msg-compose">
+            <input id="msgInput" type="text" placeholder="メッセージを入力…" maxlength="300">
+            <button class="btn btn-main btn-small" id="msgSendBtn">送信</button>
+          </div>
+        ` : ''}
+      </div>
+    </section>
+
+    <section class="panel">
       <h2 class="panel-title">参加者ランキング <span class="tag">${ALL_PLAYERS.length}名参加</span></h2>
       <table class="rank">
         <thead><tr><th>順位</th><th>ニックネーム</th><th>現在地</th></tr></thead>
@@ -1194,6 +1250,28 @@ function renderGame(){
   `;
 
   document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; renderJoin(); };
+  const msgPartnerSelect = document.getElementById('msgPartnerSelect');
+  if(msgPartnerSelect) msgPartnerSelect.onchange = (e)=>{ MSG_PARTNER = e.target.value || null; renderGame(); };
+  const msgSendBtn = document.getElementById('msgSendBtn');
+  if(msgSendBtn) msgSendBtn.onclick = async ()=>{
+    const input = document.getElementById('msgInput');
+    const text = (input.value||'').trim();
+    if(!text || !MSG_PARTNER) return;
+    msgSendBtn.disabled = true;
+    const r = await apiSendMessage(MSG_PARTNER, text);
+    msgSendBtn.disabled = false;
+    if(r && r.ok){
+      input.value = '';
+      await refreshMessages();
+      renderGame();
+    } else {
+      alert('送信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。');
+    }
+  };
+  const msgInput = document.getElementById('msgInput');
+  if(msgInput) msgInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('msgSendBtn')?.click(); } });
+  const msgThread = document.getElementById('msgThread');
+  if(msgThread) msgThread.scrollTop = msgThread.scrollHeight;
   const mapFocusBtn = document.getElementById('mapFocusBtn');
   if(mapFocusBtn) mapFocusBtn.onclick = focusMapOnMe;
   const mapResetBtn = document.getElementById('mapResetBtn');
