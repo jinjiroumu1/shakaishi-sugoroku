@@ -760,7 +760,7 @@ function buildMapTokensSVG(players){
     const key = Math.round(playerXY(p.position).x)+','+Math.round(playerXY(p.position).y);
     (groups[key] = groups[key] || []).push(p);
   });
-  let svg = '';
+  let svg = '<g style="pointer-events:none;">';
   Object.keys(groups).forEach(key=>{
     const list = groups[key];
     // 自分がいるグループなら自分を先頭に（重なったとき手前に見えるように）
@@ -791,6 +791,7 @@ function buildMapTokensSVG(players){
       }
     });
   });
+  svg += '</g>';
   return svg;
 }
 function initials(name){ return (name||'?').trim().slice(0,2); }
@@ -1037,6 +1038,8 @@ function renderGame(){
     <button class="dice-float-btn" id="rollMainBtnFloat" ${(rolledToday || atGoal || phase==='after') ? 'disabled' : ''}>
       🎲 ${atGoal ? '達成' : rolledToday ? '振済み' : phase==='after' ? '終了' : 'サイコロを振る'}
     </button>
+    <button class="dice-float-btn" id="mapFocusBtnFloat" style="background:linear-gradient(180deg, var(--indigo-700), var(--indigo-900));">🔍 自分の位置</button>
+    <button class="dice-float-btn" id="mapResetBtnFloat" style="background:linear-gradient(180deg, var(--indigo-700), var(--indigo-900));">🗺 全体表示</button>
   </div>
   <div class="wrap">
     <div class="hero">
@@ -1184,6 +1187,10 @@ function renderGame(){
   if(rollMainBtn) rollMainBtn.onclick = rollMain;
   const rollMainBtnFloat = document.getElementById('rollMainBtnFloat');
   if(rollMainBtnFloat) rollMainBtnFloat.onclick = rollMain;
+  const mapFocusBtnFloat = document.getElementById('mapFocusBtnFloat');
+  if(mapFocusBtnFloat) mapFocusBtnFloat.onclick = ()=>{ focusMapOnMe(); document.getElementById('mapSvg')?.scrollIntoView({behavior:'smooth', block:'center'}); };
+  const mapResetBtnFloat = document.getElementById('mapResetBtnFloat');
+  if(mapResetBtnFloat) mapResetBtnFloat.onclick = ()=>{ resetMapView(); document.getElementById('mapSvg')?.scrollIntoView({behavior:'smooth', block:'center'}); };
 }
 
 function medal(i){ if(i===0) return '🥇'; if(i===1) return '🥈'; if(i===2) return '🥉'; return (i+1)+'位'; }
