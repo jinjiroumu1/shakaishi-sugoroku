@@ -1024,11 +1024,16 @@ function checkNewMessagesPopup(){
           <div class="stamp side">✉️</div>
           <h3>新着メッセージが届いています</h3>
           <p class="quote">${escapeHtml(senders.join('、'))} さんから、${incoming.length}件のメッセージが届いています。</p>
-          <button class="btn btn-main" id="closeMsgNoticeBtn">閉じる</button>
+          <button class="btn btn-main" id="openMsgNoticeBtn">メッセージを見る</button>
         </div>
       `;
       document.body.appendChild(div);
-      document.getElementById('closeMsgNoticeBtn').onclick = ()=> div.remove();
+      document.getElementById('openMsgNoticeBtn').onclick = ()=>{
+        div.remove();
+        MSG_PARTNER = senders[0];
+        renderGame();
+        setTimeout(()=> document.getElementById('messagesPanel')?.scrollIntoView({behavior:'smooth', block:'start'}), 30);
+      };
     }
     const latest = ALL_MESSAGES.reduce((max,m)=> (m.timestamp>max ? m.timestamp : max), lastSeen);
     localStorage.setItem(key, latest);
@@ -1226,7 +1231,7 @@ function renderGame(){
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="messagesPanel">
       <h2 class="panel-title">✉️ メッセージ <span class="tag">${(()=>{ const s=new Set(); ALL_MESSAGES.forEach(m=>{ if(m.from!==ME) s.add(m.from); if(m.to!==ME) s.add(m.to); }); s.delete(ME); return s.size; })()}人とやり取り</span></h2>
       <p class="panel-desc">参加者と1対1でメッセージを送り合えます。内容は相手とあなただけに見えます。</p>
       <div class="msg-layout">
