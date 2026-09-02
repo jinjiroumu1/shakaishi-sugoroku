@@ -895,6 +895,7 @@ function focusMapOnMe(){
   MAP_SCALE = 2;
   const {x,y} = playerXY(PLAYER.position);
   centerMapOn(x,y);
+  scrollPageToMapPoint(y);
 }
 function resetMapView(){
   MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0;
@@ -905,7 +906,8 @@ function scrollPageToMapPoint(mapY){
   const svgEl = document.getElementById('mapSvg');
   if(!svgEl) return;
   const rect = svgEl.getBoundingClientRect();
-  const fracY = Math.min(1, Math.max(0, mapY / MAP_VB_H));
+  const screenY = MAP_PAN_Y + mapY*MAP_SCALE; // 現在の拡大率・パン位置を反映した、実際の画面上の位置
+  const fracY = Math.min(1, Math.max(0, screenY / MAP_VB_H));
   const targetY = window.scrollY + rect.top + fracY*rect.height - window.innerHeight/2;
   window.scrollTo({top: Math.max(0, targetY), behavior:'smooth'});
 }
@@ -1408,7 +1410,7 @@ function renderGame(){
   const rollMainBtnFloat = document.getElementById('rollMainBtnFloat');
   if(rollMainBtnFloat) rollMainBtnFloat.onclick = rollMain;
   const mapFocusBtnFloat = document.getElementById('mapFocusBtnFloat');
-  if(mapFocusBtnFloat) mapFocusBtnFloat.onclick = ()=>{ focusMapOnMe(); document.getElementById('mapSvg')?.scrollIntoView({behavior:'smooth', block:'center'}); };
+  if(mapFocusBtnFloat) mapFocusBtnFloat.onclick = focusMapOnMe;
   const mapResetBtnFloat = document.getElementById('mapResetBtnFloat');
   if(mapResetBtnFloat) mapResetBtnFloat.onclick = resetMapView;
 }
