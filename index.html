@@ -1152,13 +1152,42 @@ async function join(nickname, password){
       'エラーが発生しました。';
     return;
   }
+  saveLoginToStorage(nickname, hash);
+  await finishLogin(nickname, hash, r.player);
+}
+
+// ログイン成功後の共通処理（通常ログイン・自動ログインの両方から呼ぶ）
+async function finishLogin(nickname, hash, player){
   ME = nickname;
-  PLAYER = Object.assign({}, r.player, {passwordHash: hash});
+  PLAYER = Object.assign({}, player, {passwordHash: hash});
   MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0; // ログイン時は全体表示から
   await refreshAll();
   checkNewMessagesPopup();
   checkNewCheersPopup();
   renderGame();
+}
+
+// 同じPC・ブラウザなら次回から自動でログインできるよう、ニックネームとパスワードのハッシュを保存する
+const AUTO_LOGIN_STORAGE_KEY = 'sugoroku_saved_login';
+function saveLoginToStorage(nickname, passwordHash){
+  try{ localStorage.setItem(AUTO_LOGIN_STORAGE_KEY, JSON.stringify({nickname, passwordHash})); }catch(e){}
+}
+function clearLoginStorage(){
+  try{ localStorage.removeItem(AUTO_LOGIN_STORAGE_KEY); }catch(e){}
+}
+// 保存された情報があれば自動ログインを試みる。無ければ／失敗したら通常のログイン画面を出す
+async function tryAutoLoginFromStorage(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(AUTO_LOGIN_STORAGE_KEY) || 'null'); }catch(e){ saved = null; }
+  if(!saved || !saved.nickname || !saved.passwordHash){ renderJoin(); return; }
+  app.innerHTML = `<div class="wrap"><p style="text-align:center;color:#8a7c5c;margin-top:80px;">読み込み中…</p></div>`;
+  const r = await apiJoin(saved.nickname, saved.passwordHash);
+  if(!r || !r.ok){
+    clearLoginStorage();
+    renderJoin();
+    return;
+  }
+  await finishLogin(saved.nickname, saved.passwordHash, r.player);
 }
 
 /* ============ 描画 ============ */
@@ -1390,7 +1419,7 @@ function renderGame(){
   </div>
   `;
 
-  document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; renderJoin(); };
+  document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; clearLoginStorage(); renderJoin(); };
   const msgPartnerSelect = document.getElementById('msgPartnerSelect');
   if(msgPartnerSelect) msgPartnerSelect.onchange = (e)=>{ MSG_PARTNER = e.target.value || null; renderGame(); };
   const msgSendBtn = document.getElementById('msgSendBtn');
@@ -1850,7 +1879,7 @@ if(API_URL === 'YOUR_APPS_SCRIPT_URL_HERE'){
 } else if(AUTO_LOGIN_TEST){
   join(AUTO_LOGIN_NICKNAME, AUTO_LOGIN_PASSWORD);
 } else {
-  renderJoin();
+  tryAutoLoginFromStorage();
 }
 </script>
 </body>
