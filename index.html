@@ -841,6 +841,12 @@ function buildMapTokensSVG(players){
 }
 function initials(name){ return (name||'?').trim().slice(0,2); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// 履歴に記録する現在時刻（日本時間表示、'YYYY-MM-DD HH:MM'）
+function nowLocalStr(){
+  const d = new Date();
+  const p2 = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+}
 function usedBonusToday(type){
   if(!PLAYER || !PLAYER.history) return false;
   const t = todayStr();
@@ -1373,7 +1379,7 @@ function renderGame(){
     <section class="panel">
       <h2 class="panel-title">自分の履歴</h2>
       <div class="history-log">
-        ${PLAYER.history.slice().reverse().slice(0,40).map(h=>`<div>${h.date} — ${escapeHtml(h.text)}</div>`).join('') || '<div>まだ記録がありません。</div>'}
+        ${PLAYER.history.slice().reverse().filter(h=>!['bonus_client_used','bonus_hokkori_used','cheer_bonus_used'].includes(h.kind)).slice(0,40).map(h=>`<div>${h.date} — ${escapeHtml(h.text)}</div>`).join('') || '<div>まだ記録がありません。</div>'}
       </div>
     </section>
 
@@ -1515,13 +1521,13 @@ function openDiceModal(count, kind, reasonLabel){
     await new Promise(res=>setTimeout(res, 1050));
 
     if(kind==='main'){ PLAYER.lastRollDate = todayStr(); }
-    else if(kind==='bonus_client'){ PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'bonus_client_used', text: reasonLabel}); }
-    else if(kind==='bonus_hokkori'){ PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'bonus_hokkori_used', text: reasonLabel}); }
+    else if(kind==='bonus_client'){ PLAYER.history.push({date: nowLocalStr(), kind:'bonus_client_used', text: reasonLabel}); }
+    else if(kind==='bonus_hokkori'){ PLAYER.history.push({date: nowLocalStr(), kind:'bonus_hokkori_used', text: reasonLabel}); }
     else if(kind==='bonus_cheer'){
       const used = new Set((PLAYER.history||[]).filter(h=>h.kind==='cheer_bonus_used').map(h=>h.text));
       const unclaimed = ALL_CHEERS.filter(c=>c.postNickname===ME && !used.has(c.timestamp));
       unclaimed.slice(0, count).forEach(c=>{
-        PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'cheer_bonus_used', text: c.timestamp});
+        PLAYER.history.push({date: nowLocalStr(), kind:'cheer_bonus_used', text: c.timestamp});
       });
     }
     const reasonText = kind==='main' ? '本日のサイコロ' : reasonLabel;
@@ -1539,7 +1545,7 @@ function openDiceModal(count, kind, reasonLabel){
         const choice = await showBranchChoiceModal(arrival);
         div.style.display = '';
         if(choice === 'side'){
-          PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'branch', text:`${arrival.name}へ寄り道（${arrival.activity}）`});
+          PLAYER.history.push({date: nowLocalStr(), kind:'branch', text:`${arrival.name}へ寄り道（${arrival.activity}）`});
           arrivals.push(arrival);
           stoppedAtBranch = true;
           break; // 寄り道を選んだので、残りの出目は打ち切り
@@ -1726,7 +1732,7 @@ function movePlayer(roll, text){
   const passedStations = stationPositions.filter(p => p > prevPos && p <= targetPos).sort((a,b)=>a-b);
   let newPos = passedStations.length ? passedStations[0] : targetPos;
   PLAYER.position = newPos;
-  PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'move', text});
+  PLAYER.history.push({date: nowLocalStr(), kind:'move', text});
 
   if(newPos <= prevPos) return null;
 
@@ -1747,7 +1753,7 @@ function movePlayer(roll, text){
     const target = specialTarget(w);
     const fromLabel = stationLabel(newPos>0?newPos:0);
     PLAYER.position = target;
-    PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'special', text:(w.kind==='forward'?'近道マスで':'後退マスで')+stationLabel(target)+'まで移動'});
+    PLAYER.history.push({date: nowLocalStr(), kind:'special', text:(w.kind==='forward'?'近道マスで':'後退マスで')+stationLabel(target)+'まで移動'});
     if(target >= GOAL_POS && !PLAYER.arrivedAt){ PLAYER.arrivedAt = new Date().toISOString(); return {type:'goal', name:'鉢石宿（日光東照宮）'}; }
     return {type:'special', kind:w.kind, targetName: stationLabel(target)};
   }
