@@ -441,7 +441,8 @@ let MAP_NODES = [];
         name: w.isGoal ? '鉢石宿・日光東照宮' : w.name,
         icon: w.isGoal ? '⛩️' : w.icon,
         trivia: w.trivia || '',
-        isGoal: !!w.isGoal
+        isGoal: !!w.isGoal,
+        stationOrder: w.stationOrder
       });
     }
   });
@@ -721,19 +722,34 @@ function showBranchInfoModal(key){
   document.getElementById('closeBranchInfoBtn').onclick = ()=> div.remove();
 }
 
+const TEST_STATION_MESSAGE_PREVIEW = true; // 9/4本番までの確認用。本番ではfalseにする（通過時のみ表示に戻る）
 function showStationInfoModal(i){
   const n = MAP_NODES[i];
   if(!n) return;
+  const msg = (TEST_STATION_MESSAGE_PREVIEW && n.stationOrder!=null) ? STATION_MESSAGES[n.stationOrder] : null;
   const div = document.createElement('div');
   div.className = 'modal-backdrop';
-  div.innerHTML = `
-    <div class="modal-card">
-      <div class="stamp" style="border-color:${n.isGoal?'var(--vermillion)':n.type==='sidequest'?'var(--gold)':'var(--indigo-700)'}; color:${n.isGoal?'var(--vermillion)':n.type==='sidequest'?'#8a6a1a':'var(--indigo-700)'};">${n.icon}</div>
-      <h3>${escapeHtml(n.name)}</h3>
-      <p class="quote">${escapeHtml(n.trivia || '')}</p>
-      <button class="btn btn-main" id="closeStationModalBtn">閉じる</button>
-    </div>
-  `;
+  if(msg){
+    div.innerHTML = `
+      <div class="modal-card">
+        <div class="stamp side">${n.icon}</div>
+        <img src="${msg.image}" style="display:block; width:120px; height:120px; border-radius:50%; margin:0 auto 12px; border:4px solid var(--gold); object-fit:cover;" />
+        <h3>${escapeHtml(n.name)}</h3>
+        <p class="quote">${msg.lines.map(l=>`「${escapeHtml(l)}」`).join('<br>')}<br><span style="font-size:0.7rem;color:#a99a72;">― ${escapeHtml(msg.name)}（${escapeHtml(msg.title)}）</span></p>
+        <p class="note">※確認用表示です（本番では通過時のみ表示されます）。</p>
+        <button class="btn btn-main" id="closeStationModalBtn">閉じる</button>
+      </div>
+    `;
+  } else {
+    div.innerHTML = `
+      <div class="modal-card">
+        <div class="stamp" style="border-color:${n.isGoal?'var(--vermillion)':n.type==='sidequest'?'var(--gold)':'var(--indigo-700)'}; color:${n.isGoal?'var(--vermillion)':n.type==='sidequest'?'#8a6a1a':'var(--indigo-700)'};">${n.icon}</div>
+        <h3>${escapeHtml(n.name)}</h3>
+        <p class="quote">${escapeHtml(n.trivia || '')}</p>
+        <button class="btn btn-main" id="closeStationModalBtn">閉じる</button>
+      </div>
+    `;
+  }
   document.body.appendChild(div);
   document.getElementById('closeStationModalBtn').onclick = ()=> div.remove();
 }
@@ -1222,13 +1238,18 @@ function openDiceModal(count, kind, reasonLabel){
       <div class="dice-3d-row">${Array.from({length:count}).map((_,i)=>dieCubeHTML(i)).join('')}</div>
       <div class="dice-result" id="diceModalResult"></div>
       <button class="btn btn-main" id="diceModalBtn">サイコロを押す</button>
+      <button class="btn btn-ghost" id="diceModalCancelBtn" style="margin-top:8px;">閉じる（まだ振らない）</button>
     </div>
   `;
   document.body.appendChild(div);
 
+  const cancelBtn = document.getElementById('diceModalCancelBtn');
+  cancelBtn.onclick = ()=> div.remove();
+
   const btn = document.getElementById('diceModalBtn');
   btn.onclick = async ()=>{
     btn.disabled = true;
+    if(cancelBtn) cancelBtn.style.display = 'none';
     const startPos = PLAYER.position; // 移動前の位置を覚えておき、あとで中央寄せに使う
     const values = [];
     for(let i=0;i<count;i++){
@@ -1390,7 +1411,11 @@ function showEpisodeModal(kind, idx){
 
 function movePlayer(roll, text){
   const prevPos = PLAYER.position;
-  let newPos = Math.min(GOAL_POS, prevPos + roll);
+  const stationPositions = MAP_NODES.filter(n=>n.type==='station' && !n.isGoal).map(n=>n.pos);
+  let targetPos = Math.min(GOAL_POS, prevPos + roll);
+  // 宿場を通り過ぎる場合は、途中の最初の宿場で強制的に止まる（大きい目が出ても素通りしない）
+  const passedStations = stationPositions.filter(p => p > prevPos && p <= targetPos).sort((a,b)=>a-b);
+  let newPos = passedStations.length ? passedStations[0] : targetPos;
   PLAYER.position = newPos;
   PLAYER.history.push({date: new Date().toISOString().slice(0,16).replace('T',' '), kind:'move', text});
 
