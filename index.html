@@ -167,6 +167,8 @@
   .modal-backdrop{position:fixed; inset:0; background:rgba(16,20,30,0.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; opacity:1; transition: opacity 0.28s ease;}
   .modal-backdrop.fade-out{opacity:0;}
   .modal-card{background:#fffaf0; border-radius:16px; max-width:420px; width:100%; padding:28px 24px 24px; position:relative; text-align:center; box-shadow:0 24px 60px -20px rgba(0,0,0,0.5);}
+  .modal-close-x{position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; border:none; background:rgba(0,0,0,0.06); color:#8a7c5c; font-size:1.1rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .modal-close-x:hover{background:rgba(0,0,0,0.12); color:#4a4433;}
   .stamp{width:88px; height:88px; border-radius:50%; border:5px solid var(--vermillion); color:var(--vermillion); display:flex; align-items:center; justify-content:center; font-family:'Shippori Mincho', serif; font-weight:800; font-size:0.9rem; margin:0 auto 14px; transform:rotate(-8deg) scale(0); animation:stampIn 0.45s cubic-bezier(.2,1.4,.4,1) forwards; animation-delay:0.15s;}
   .stamp.side{border-color:var(--gold); color:#8a6a1a;}
   .stamp.forward{border-color:var(--forward); color:var(--forward);}
@@ -807,12 +809,12 @@ function buildMapTokensSVG(players){
       if(isMe){
         svg += `
           <g id="myTokenGroup" class="my-token-marker" transform="translate(${tx.toFixed(1)},${ty.toFixed(1)})">
-            <circle cx="0" cy="0" r="34" fill="none" stroke="var(--vermillion)" stroke-width="3" class="my-token-pulse"/>
-            <circle cx="0" cy="0" r="26" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="4"/>
-            <text x="0" y="8" font-size="18" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
-            <text x="0" y="-46" font-size="18" text-anchor="middle">👇</text>
-            <rect x="-38" y="-72" width="76" height="24" rx="12" fill="var(--vermillion)"/>
-            <text x="0" y="-55" font-size="13" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
+            <circle cx="0" cy="0" r="50" fill="none" stroke="var(--vermillion)" stroke-width="4" class="my-token-pulse"/>
+            <circle cx="0" cy="0" r="40" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="6"/>
+            <text x="0" y="12" font-size="26" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
+            <text x="0" y="-66" font-size="26" text-anchor="middle">👇</text>
+            <rect x="-52" y="-104" width="104" height="32" rx="16" fill="var(--vermillion)"/>
+            <text x="0" y="-82" font-size="17" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
           </g>
         `;
       } else {
@@ -883,15 +885,18 @@ function resetMapView(){
   applyMapTransform();
   scrollPageToPlayer();
 }
-function scrollPageToPlayer(){
-  if(!PLAYER) return;
+function scrollPageToMapPoint(mapY){
   const svgEl = document.getElementById('mapSvg');
   if(!svgEl) return;
-  const {y} = playerXY(PLAYER.position);
   const rect = svgEl.getBoundingClientRect();
-  const fracY = Math.min(1, Math.max(0, y / MAP_VB_H));
+  const fracY = Math.min(1, Math.max(0, mapY / MAP_VB_H));
   const targetY = window.scrollY + rect.top + fracY*rect.height - window.innerHeight/2;
   window.scrollTo({top: Math.max(0, targetY), behavior:'smooth'});
+}
+function scrollPageToPlayer(){
+  if(!PLAYER) return;
+  const {y} = playerXY(PLAYER.position);
+  scrollPageToMapPoint(y);
 }
 function setupMapDrag(svgEl){
   if(!svgEl) return;
@@ -1378,12 +1383,12 @@ function openDiceModal(count, kind, reasonLabel){
   div.className = 'modal-backdrop';
   div.innerHTML = `
     <div class="modal-card dice-modal-card">
+      <button class="modal-close-x" id="diceModalCancelBtn" aria-label="閉じる（まだ振らない）">✕</button>
       <h3>${kind==='main' ? '🎲 本日のサイコロ' : '🎲 ' + escapeHtml(reasonLabel)}</h3>
       <p class="note" style="margin-bottom:14px;">${count>1 ? count+'個のサイコロを同時に振ります。' : 'サイコロを振ります。'}</p>
       <div class="dice-3d-row">${Array.from({length:count}).map((_,i)=>dieCubeHTML(i)).join('')}</div>
       <div class="dice-result" id="diceModalResult"></div>
       <button class="btn btn-main" id="diceModalBtn">サイコロを押す</button>
-      <button class="btn btn-ghost" id="diceModalCancelBtn" style="margin-top:8px;">閉じる（まだ振らない）</button>
     </div>
   `;
   document.body.appendChild(div);
@@ -1441,9 +1446,9 @@ function openDiceModal(count, kind, reasonLabel){
     div.classList.add('fade-out');
     await new Promise(res=>setTimeout(res, 280));
     div.remove();
-    document.querySelector('.map-wrap')?.scrollIntoView({behavior:'smooth', block:'center'});
+    MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0; applyMapTransform();
     const startXY = playerXY(startPos), endXY = playerXY(PLAYER.position);
-    centerMapOn((startXY.x+endXY.x)/2, (startXY.y+endXY.y)/2); // 移動区間が画面中央に来るようにする
+    scrollPageToMapPoint((startXY.y+endXY.y)/2); // 移動区間が画面に映るよう、ページごとスクロール
     const savePromise = apiSave(PLAYER);
     await new Promise(res=>setTimeout(res, 2000)); // すごろくが見えてから2秒待ってからコマを動かす
     await animateMyTokenTo(PLAYER.position);
