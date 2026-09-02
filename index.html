@@ -764,13 +764,14 @@ const TEST_STATION_MESSAGE_PREVIEW = true; // 9/4本番までの確認用。本�
 function showStationInfoModal(i){
   const n = MAP_NODES[i];
   if(!n) return;
-  const msg = (TEST_STATION_MESSAGE_PREVIEW && n.stationOrder!=null) ? STATION_MESSAGES[n.stationOrder] : null;
+  const hasReached = !!(PLAYER && PLAYER.position >= n.pos); // このマスまで進んでいるか（本番の切り替え判定）
+  const msg = (n.stationOrder!=null && (TEST_STATION_MESSAGE_PREVIEW || hasReached)) ? STATION_MESSAGES[n.stationOrder] : null;
   const div = document.createElement('div');
   div.className = 'modal-backdrop';
   if(msg){
     div.innerHTML = `
       <div class="modal-card msg-card">
-        ${buildStationMessageInnerHTML(n.name, n.icon, msg, '<p class="note">※確認用表示です（本番では通過時のみ表示されます）。</p>')}
+        ${buildStationMessageInnerHTML(n.name, n.icon, msg, (TEST_STATION_MESSAGE_PREVIEW && !hasReached) ? '<p class="note">※確認用表示です（本番では通過時のみ表示されます）。</p>' : '')}
       </div>
     `;
   } else {
