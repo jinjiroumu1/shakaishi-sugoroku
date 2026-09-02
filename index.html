@@ -464,7 +464,7 @@ let MAP_VB_W, MAP_VB_H, MAP_ROWS;
   }
   MAP_ROWS = row + 1;
   MAP_VB_W = MAP_PAD_X*2 + MAX_ROW_WIDTH;
-  const rowImgH = MAP_VB_W / 2.729231; // 背景画像の実際の高さ（白余白を切った後の縦横比、間隔とは別）
+  const rowImgH = 1150; // 背景画像の表示高さ（白余白を切った後、少し縦に伸ばして大きく見せる。間隔とは別）
   MAP_VB_H = MAP_PAD_Y*2 + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H + (rowImgH - MAP_CELL_H);
 })();
 
@@ -530,7 +530,7 @@ const ROW_BG_IMAGES = {
 function buildMapStaticSVG(){
   // 背景は行ごとに割り当てた画像で敷く。未割り当ての行は承認済みの丘タイルで補う
   const BG_IMG_W = 900, BG_IMG_H = 490;
-  const rowImgH = MAP_VB_W / 2.729231; // 画像の実際の高さは固定（白余白を切った後の縦横比、間隔よりずっと大きく、次の行と重なる）
+  const rowImgH = 1150; // 画像の表示高さは固定（少し縦に伸ばして大きく見せる。間隔よりずっと大きく、次の行と重なる）
   const rowCenters = [];
   for(let r=0; r<MAP_ROWS; r++) rowCenters.push(MAP_PAD_Y + MAP_TOP_EXTRA + r*MAP_CELL_H);
   let rowBands = '';
@@ -542,7 +542,7 @@ function buildMapStaticSVG(){
         <clipPath id="${clipId}"><rect x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}"/></clipPath>
         <g clip-path="url(#${clipId})" onclick="showRowBgModal(${r})" style="cursor:zoom-in;">
           <rect x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}" fill="#eaf3e0"/>
-          <image href="${ROW_BG_IMAGES[r]}" x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>
+          <image href="${ROW_BG_IMAGES[r]}" x="0" y="${imgTop.toFixed(1)}" width="${MAP_VB_W}" height="${rowImgH.toFixed(1)}" preserveAspectRatio="none"/>
         </g>
       `;
     } else {
