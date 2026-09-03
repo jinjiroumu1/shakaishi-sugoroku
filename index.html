@@ -170,6 +170,18 @@
   .modal-close-x{position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; border:none; background:rgba(0,0,0,0.06); color:#8a7c5c; font-size:1.1rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;}
   .modal-close-x:hover{background:rgba(0,0,0,0.12); color:#4a4433;}
   .stamp{width:88px; height:88px; border-radius:50%; border:5px solid var(--vermillion); color:var(--vermillion); display:flex; align-items:center; justify-content:center; font-family:'Shippori Mincho', serif; font-weight:800; font-size:0.9rem; margin:0 auto 14px; transform:rotate(-8deg) scale(0); animation:stampIn 0.45s cubic-bezier(.2,1.4,.4,1) forwards; animation-delay:0.15s;}
+
+  .loading-screen{display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh; text-align:center;}
+  .loading-dice{font-size:4.5rem; display:inline-block; animation:diceRoll 1.1s ease-in-out infinite;}
+  .loading-road{font-size:1.6rem; letter-spacing:6px; margin-top:18px; opacity:0.75;}
+  .loading-text{color:#8a7c5c; margin-top:16px; font-size:0.95rem; font-weight:700;}
+  @keyframes diceRoll{
+    0%{transform:rotate(0deg) scale(1);}
+    25%{transform:rotate(100deg) scale(1.08);}
+    50%{transform:rotate(190deg) scale(0.96);}
+    75%{transform:rotate(280deg) scale(1.08);}
+    100%{transform:rotate(360deg) scale(1);}
+  }
   .stamp.side{border-color:var(--gold); color:#8a6a1a;}
   .stamp.forward{border-color:var(--forward); color:var(--forward);}
   .stamp.back{border-color:var(--back); color:var(--back);}
@@ -955,9 +967,9 @@ function buildMapTokensSVG(players){
             <circle cx="0" cy="0" r="50" fill="none" stroke="var(--vermillion)" stroke-width="4" class="my-token-pulse"/>
             <circle cx="0" cy="0" r="40" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="6"/>
             <text x="0" y="12" font-size="26" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
-            <text x="0" y="-72" font-size="34" text-anchor="middle">👇</text>
-            <rect x="-78" y="-134" width="156" height="46" rx="23" fill="var(--vermillion)" stroke="#fff8ee" stroke-width="3"/>
-            <text x="0" y="-103" font-size="26" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
+            <text x="0" y="-216" font-size="102" text-anchor="middle">👇</text>
+            <rect x="-234" y="-402" width="468" height="138" rx="69" fill="var(--vermillion)" stroke="#fff8ee" stroke-width="6"/>
+            <text x="0" y="-309" font-size="78" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
           </g>
         `;
       } else {
@@ -1262,7 +1274,7 @@ function renderJoin(){
         <div class="err" id="joinErr"></div>
         <button class="btn btn-main" style="width:100%" id="joinBtn">参加する / つづきから</button>
         <div class="warn-box">
-          🔒 同じニックネームで記録を続けるには、最初に決めた合言葉（パスワード）が必要です。厳重なセキュリティ用途ではない簡易的な仕組みです。忘れると別ニックネームでの再登録が必要になります。
+          🔒 同じニックネームで記録を続けるには、最初に決めた合言葉（パスワード）が必要です。他のサービスと同じ合言葉は避けてください。忘れると別ニックネームでの再登録が必要になります。
         </div>
       </div>
     </div>
@@ -1277,7 +1289,7 @@ async function join(nickname, password){
   if(!nickname){ if(errEl) errEl.textContent = 'ニックネームを入力してください'; return; }
   if(!password){ if(errEl) errEl.textContent = 'パスワードを入力してください'; return; }
   if(errEl) errEl.textContent = '';
-  app.innerHTML = `<div class="wrap"><p style="text-align:center;color:#8a7c5c;margin-top:80px;">読み込み中…</p></div>`;
+  app.innerHTML = `<div class="wrap"><div class="loading-screen"><div class="loading-dice">🎲</div><div class="loading-road">🏯 〜〜〜 ⛩️</div><div class="loading-text">読み込んでいます…</div></div></div>`;
   const hash = await sha256Hex(password);
   const r = await apiJoin(nickname, hash);
   if(!r || !r.ok){
@@ -1317,7 +1329,7 @@ async function tryAutoLoginFromStorage(){
   let saved = null;
   try{ saved = JSON.parse(localStorage.getItem(AUTO_LOGIN_STORAGE_KEY) || 'null'); }catch(e){ saved = null; }
   if(!saved || !saved.nickname || !saved.passwordHash){ renderJoin(); return; }
-  app.innerHTML = `<div class="wrap"><p style="text-align:center;color:#8a7c5c;margin-top:80px;">読み込み中…</p></div>`;
+  app.innerHTML = `<div class="wrap"><div class="loading-screen"><div class="loading-dice">🎲</div><div class="loading-road">🏯 〜〜〜 ⛩️</div><div class="loading-text">読み込んでいます…</div></div></div>`;
   const r = await apiJoin(saved.nickname, saved.passwordHash);
   if(!r || !r.ok){
     clearLoginStorage();
@@ -1402,7 +1414,7 @@ function renderGame(){
           <div class="status-label">現在地</div>
           <div class="status-value small">${atGoal ? '日光東照宮（ゴール！）' : locationLabel(PLAYER.position)}</div>
         </div>
-        <button class="btn btn-ghost btn-small" id="switchBtn">別のニックネームで参加</button>
+        <button class="btn btn-ghost btn-small" id="switchBtn">ログアウト／別のニックネームで参加</button>
       </div>
     </div>
 
@@ -1705,8 +1717,9 @@ function openDiceModal(count, kind, reasonLabel){
       const text = kind==='main'
         ? `本日のサイコロで${v}が出て、${v}マス進んだ`
         : `（${reasonText}）ボーナスサイコロで${v}が出て、${v}マス進んだ`;
-      const arrival = movePlayer(v, text);
-      if(arrival && arrival.type==='branch'){
+      const results = movePlayer(v, text) || [];
+      if(results.length === 1 && results[0].type==='branch'){
+        const arrival = results[0];
         div.style.display = 'none'; // 選択ダイアログの間、サイコロのポップアップは一旦隠す
         const choice = await showBranchChoiceModal(arrival);
         div.style.display = '';
@@ -1717,8 +1730,8 @@ function openDiceModal(count, kind, reasonLabel){
           break; // 寄り道を選んだので、残りの出目は打ち切り
         }
         // 「本筋を進む」を選んだ場合は何もせず次の出目へ
-      } else if(arrival){
-        arrivals.push(arrival);
+      } else {
+        arrivals.push(...results);
       }
       if(PLAYER.position>=GOAL_POS) break;
     }
@@ -1904,12 +1917,12 @@ function movePlayer(roll, text){
 
   if(newPos >= GOAL_POS && !PLAYER.arrivedAt){
     PLAYER.arrivedAt = new Date().toISOString();
-    return {type:'goal', name:'鉢石宿（日光東照宮）'};
+    return [{type:'goal', name:'鉢石宿（日光東照宮）'}];
   }
 
   const branch = BRANCH_POINTS[newPos];
   if(branch){
-    return {type:'branch', key:branch.key, name:branch.name, icon:branch.icon, trivia:branch.trivia, activity:branch.activity, illustration:branch.illustration};
+    return [{type:'branch', key:branch.key, name:branch.name, icon:branch.icon, trivia:branch.trivia, activity:branch.activity, illustration:branch.illustration}];
   }
 
   const w = wpAt(newPos);
@@ -1917,14 +1930,21 @@ function movePlayer(roll, text){
 
   if(w.type==='special'){
     const target = specialTarget(w);
-    const fromLabel = stationLabel(newPos>0?newPos:0);
     PLAYER.position = target;
     PLAYER.history.push({date: nowLocalStr(), kind:'special', text:(w.kind==='forward'?'近道マスで':'後退マスで')+stationLabel(target)+'まで移動'});
-    if(target >= GOAL_POS && !PLAYER.arrivedAt){ PLAYER.arrivedAt = new Date().toISOString(); return {type:'goal', name:'鉢石宿（日光東照宮）'}; }
-    return {type:'special', kind:w.kind, targetName: stationLabel(target)};
+    const results = [{type:'special', kind:w.kind, targetName: stationLabel(target)}];
+    if(target >= GOAL_POS && !PLAYER.arrivedAt){
+      PLAYER.arrivedAt = new Date().toISOString();
+      results.push({type:'goal', name:'鉢石宿（日光東照宮）'});
+      return results;
+    }
+    // 近道・後退の結果、宿場にちょうど着地した場合は、その宿場のポップアップも続けて出す
+    const targetW = wpAt(target);
+    if(targetW && targetW.type==='station') results.push(targetW);
+    return results;
   }
 
-  if(w.type==='station') return w;
+  if(w.type==='station') return [w];
   return null;
 }
 
