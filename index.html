@@ -359,17 +359,47 @@ const SIDEQUEST_DEFS = [
   {afterGapIndex:17, offsetInGap:0, key:'shirakawa', name:'新白河ハウス', icon:'🏠', trivia:'いのちのジュンカンを感じ、3割増しの日常が溢れている。共通の体験をしながら、みんなでつくる新白河ハウス。', activity:'新白河ハウスで一泊', illustration:'🛌'},
 ];
 
-// 進む／戻るマス（全体でそれぞれ3つずつ）
+// 進む／戻るマス（宿場と宿場の間に散らした、様々な「出来事」マス）
 const SPECIAL_DEFS = [
-  {afterGapIndex:2,  offsetInGap:9,  kind:'forward'},
-  {afterGapIndex:9,  offsetInGap:6,  kind:'forward'},
-  {afterGapIndex:16, offsetInGap:7,  kind:'forward'},
-  {afterGapIndex:4,  offsetInGap:7,  kind:'back1'},
-  {afterGapIndex:11, offsetInGap:6,  kind:'back1'},
-  {afterGapIndex:18, offsetInGap:9,  kind:'back1'},
-  {afterGapIndex:6,  offsetInGap:10, kind:'back2'},
-  {afterGapIndex:13, offsetInGap:5,  kind:'back2'},
-  {afterGapIndex:19, offsetInGap:10, kind:'back2'},
+  {afterGapIndex:0, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:1, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:2, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:3, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:4, offsetInGap:6, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:5, offsetInGap:5, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:6, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:7, offsetInGap:2, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:8, offsetInGap:5, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:9, offsetInGap:5, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:10, offsetInGap:5, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:11, offsetInGap:5, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:12, offsetInGap:4, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:13, offsetInGap:4, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:14, offsetInGap:5, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:15, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:16, offsetInGap:6, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:17, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:18, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:19, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:20, offsetInGap:7, kind:'back_n', amount:3, icon:'🍺', message:'飲み会で飲みすぎた。3つ戻る'},
+  {afterGapIndex:1, offsetInGap:6, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:5, offsetInGap:4, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:8, offsetInGap:4, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:10, offsetInGap:4, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:12, offsetInGap:3, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:15, offsetInGap:6, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:20, offsetInGap:6, kind:'back_n', amount:5, icon:'📝', message:'給与計算ミス！5つ戻る'},
+  {afterGapIndex:7, offsetInGap:1, kind:'back_to_station', targetStationOrder:4, icon:'👛'},
+  {afterGapIndex:14, offsetInGap:4, kind:'back_to_station', targetStationOrder:11, icon:'👛'},
+  {afterGapIndex:3, offsetInGap:6, kind:'forward', icon:'🚗', message:'顧問先の車に同乗させてもらった。次の宿場町へ前進'},
+  {afterGapIndex:9, offsetInGap:7, kind:'forward', icon:'🚗', message:'顧問先の車に同乗させてもらった。次の宿場町へ前進'},
+  {afterGapIndex:13, offsetInGap:6, kind:'forward', icon:'🚗', message:'顧問先の車に同乗させてもらった。次の宿場町へ前進'},
+  {afterGapIndex:18, offsetInGap:6, kind:'forward', icon:'🚗', message:'顧問先の車に同乗させてもらった。次の宿場町へ前進'},
+  {afterGapIndex:4, offsetInGap:8, kind:'back_n', amount:10, icon:'🐻', message:'熊出没！！10個戻る'},
+  {afterGapIndex:16, offsetInGap:8, kind:'back_n', amount:10, icon:'🐻', message:'熊出没！！10個戻る'},
+  {afterGapIndex:17, offsetInGap:6, kind:'back_n', amount:10, icon:'🐻', message:'熊出没！！10個戻る'},
+  {afterGapIndex:11, offsetInGap:7, kind:'back_n', amount:10, icon:'🤒', message:'働きすぎて体調不良。10個戻る'},
+  {afterGapIndex:19, offsetInGap:6, kind:'back_n', amount:10, icon:'🤒', message:'働きすぎて体調不良。10個戻る'},
 ];
 
 const CLIENT_BONUS = [
@@ -577,7 +607,11 @@ let BRANCH_POINTS = {}; // pos -> 寄り道の分岐情報
     const target = WAYPOINTS.find(w=>w.type==='plain' && w.gapIndex===sp.afterGapIndex && w.offset===sp.offsetInGap);
     if(target){
       target.type = 'special';
-      target.kind = sp.kind; // 'forward' | 'back1' | 'back2'
+      target.kind = sp.kind; // 'forward' | 'back1' | 'back2' | 'back_n' | 'back_to_station'
+      target.amount = sp.amount;
+      target.targetStationOrder = sp.targetStationOrder;
+      target.specialIcon = sp.icon;
+      target.specialMessage = sp.message;
     }
   });
 })();
@@ -593,6 +627,8 @@ function specialTarget(w){
   if(w.kind==='forward') return stationPos(w.gapIndex);
   if(w.kind==='back1') return stationPos(w.gapIndex-1);
   if(w.kind==='back2') return stationPos(w.gapIndex-2);
+  if(w.kind==='back_n') return Math.max(0, w.pos - (w.amount||0));
+  if(w.kind==='back_to_station') return stationPos(w.targetStationOrder);
   return w.pos;
 }
 
@@ -759,9 +795,10 @@ function buildMapStaticSVG(){
     const {x, y} = playerXY(w.pos);
     if(w.type==='special'){
       const isForward = w.kind==='forward';
+      const isBack = w.kind==='back1' || w.kind==='back2' || w.kind==='back_n' || w.kind==='back_to_station';
       const color = isForward ? 'var(--forward)' : 'var(--back)';
       const bg = isForward ? 'var(--forward-soft)' : 'var(--back-soft)';
-      const icon = isForward ? '🐎' : '🌀';
+      const icon = w.specialIcon || (isForward ? '🐎' : '🌀');
       ticks += `
         <rect x="${(x-30).toFixed(1)}" y="${(y-30).toFixed(1)}" width="60" height="60" rx="12" fill="${bg}" stroke="${color}" stroke-width="3.5"/>
         <text x="${x.toFixed(1)}" y="${(y+11).toFixed(1)}" font-size="30" text-anchor="middle">${icon}</text>
@@ -1883,6 +1920,7 @@ function showEpisodeModal(kind, idx){
   div.className = 'modal-backdrop';
   div.innerHTML = `
     <div class="modal-card">
+      <button class="modal-close-x" id="episodeCloseBtn" aria-label="閉じる">✕</button>
       <h3>${escapeHtml(opt.label)}</h3>
       <p class="note" style="margin-bottom:10px;">どんなことがあったの？（掲示板にニックネームと一緒に投稿されます）</p>
       <textarea id="episodeInput" class="episode-textarea" rows="4" placeholder="例）顧問先の担当者さんにお礼を言われて嬉しかった"></textarea>
@@ -1891,6 +1929,7 @@ function showEpisodeModal(kind, idx){
     </div>
   `;
   document.body.appendChild(div);
+  document.getElementById('episodeCloseBtn').onclick = ()=> div.remove();
   document.getElementById('episodeSubmitBtn').onclick = async ()=>{
     const text = document.getElementById('episodeInput').value.trim();
     if(!text){ document.getElementById('episodeErr').textContent = '内容を入力してください。'; return; }
@@ -1933,8 +1972,14 @@ function movePlayer(roll, text){
   if(w.type==='special'){
     const target = specialTarget(w);
     PLAYER.position = target;
-    PLAYER.history.push({date: nowLocalStr(), kind:'special', text:(w.kind==='forward'?'近道マスで':'後退マスで')+stationLabel(target)+'まで移動'});
-    const results = [{type:'special', kind:w.kind, targetName: stationLabel(target)}];
+    const dynamicMessage = w.kind==='back_to_station'
+      ? `${stationLabel(target)}に財布を忘れた。${stationLabel(target)}に戻る`
+      : w.specialMessage;
+    const histText = dynamicMessage
+      ? `${dynamicMessage}（${stationLabel(target)}へ）`
+      : (w.kind==='forward'?'近道マスで':'後退マスで')+stationLabel(target)+'まで移動';
+    PLAYER.history.push({date: nowLocalStr(), kind:'special', text: histText});
+    const results = [{type:'special', kind:w.kind, targetName: stationLabel(target), specialIcon: w.specialIcon, specialMessage: dynamicMessage}];
     if(target >= GOAL_POS && !PLAYER.arrivedAt){
       PLAYER.arrivedAt = new Date().toISOString();
       results.push({type:'goal', name:'鉢石宿（日光東照宮）'});
@@ -1967,7 +2012,14 @@ function showArrivalModal(w, onClose){
     quote = '「日光東照宮、到着おめでとうございます。ここまでの道のり、お疲れさまでした。」<br><span style="font-size:0.7rem;color:#a99a72;">― 先輩社労士（仮）</span>';
     stampText = '日光<br>到着';
   } else if(isSpecial){
-    if(w.kind==='forward'){
+    const isForward = w.kind==='forward';
+    if(w.specialMessage){
+      // 新しい「出来事マス」（メッセージ・アイコンをそのまま使う）
+      title = (w.specialIcon || (isForward?'🐎':'🌀')) + ' ' + w.specialMessage;
+      quote = `結果、宿場「${w.targetName}」まで${isForward?'進みました':'戻ることになりました'}。`;
+      stampText = isForward ? '前進' : '後退';
+      stampCls = isForward ? 'forward' : 'back';
+    } else if(isForward){
       title = '🐎 近道！一気に前進';
       quote = `馬が疾走！次の宿場「${w.targetName}」まで一気に進みました。`;
       stampText = '近道';
