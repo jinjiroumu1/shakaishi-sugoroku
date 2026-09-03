@@ -404,10 +404,9 @@ const SPECIAL_DEFS = [
 ];
 
 const CLIENT_BONUS = [
-  {label:'スポット契約が決まった', amount:1},
-  {label:'顧問契約（月額5万円未満）が決まった', amount:2},
-  {label:'顧問契約（月額5万円以上10万円未満）が決まった', amount:3},
-  {label:'顧問契約（月額10万円以上）が決まった', amount:5},
+  {label:'ヒット級', amount:1},
+  {label:'ホームラン級', amount:1},
+  {label:'場外ホームラン級', amount:1},
 ];
 const HOKKORI = [
   '顧問先からお褒めの言葉をもらえた！',
@@ -1565,6 +1564,11 @@ function renderGame(){
       </div>
     </section>
 
+    <section class="panel">
+      <h2 class="panel-title">💬 9月の共感資本事業部コメント</h2>
+      <p class="panel-desc">近日公開予定です。</p>
+    </section>
+
     <section class="panel" id="messagesPanel">
       <h2 class="panel-title">✉️ メッセージ <span class="tag">${(()=>{ const s=new Set(); ALL_MESSAGES.forEach(m=>{ if(m.from!==ME) s.add(m.from); if(m.to!==ME) s.add(m.to); }); s.delete(ME); return s.size; })()}人とやり取り</span></h2>
       <p class="panel-desc">参加者と1対1でメッセージを送り合えます。内容は相手とあなただけに見えます。</p>
@@ -1974,14 +1978,20 @@ function showChoiceModal(kind){
 
 function showEpisodeModal(kind, idx){
   const opt = bonusOptions(kind)[idx];
+  const questionText = kind==='client'
+    ? 'その会社があなたとつながったのはなぜですか？'
+    : 'どんなことがあったの？（掲示板にニックネームと一緒に投稿されます）';
+  const placeholderText = kind==='client'
+    ? '例）以前からの知り合いの紹介で、信頼して任せていただけた'
+    : '例）顧問先の担当者さんにお礼を言われて嬉しかった';
   const div = document.createElement('div');
   div.className = 'modal-backdrop';
   div.innerHTML = `
     <div class="modal-card">
       <button class="modal-close-x" id="episodeCloseBtn" aria-label="閉じる">✕</button>
       <h3>${escapeHtml(opt.label)}</h3>
-      <p class="note" style="margin-bottom:10px;">どんなことがあったの？（掲示板にニックネームと一緒に投稿されます）</p>
-      <textarea id="episodeInput" class="episode-textarea" rows="4" placeholder="例）顧問先の担当者さんにお礼を言われて嬉しかった"></textarea>
+      <p class="note" style="margin-bottom:10px;">${escapeHtml(questionText)}</p>
+      <textarea id="episodeInput" class="episode-textarea" rows="4" placeholder="${escapeHtml(placeholderText)}"></textarea>
       <div class="err" id="episodeErr" style="min-height:1.2em;margin:6px 0;"></div>
       <button class="btn btn-main" id="episodeSubmitBtn" style="width:100%;">投稿してサイコロへ進む</button>
     </div>
