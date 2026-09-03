@@ -185,6 +185,8 @@
   .msg-header-icon{font-size:2rem; line-height:1;}
   .msg-header-name{font-family:'Shippori Mincho', serif; font-weight:800; font-size:1.15rem; color:var(--indigo-900);}
   .msg-photo{display:block; width:180px; height:180px; border-radius:50%; margin:0 auto 16px; border:5px solid var(--gold); object-fit:cover; box-shadow:0 10px 24px -10px rgba(0,0,0,0.35);}
+  .msg-photo-placeholder{display:flex; align-items:center; justify-content:center; font-size:4.2rem; background:#f1ead8; color:#c9b183;}
+  .msg-quote-pending{color:#a99a72; font-weight:400; font-style:italic;}
   .msg-person-name{font-family:'Shippori Mincho', serif; font-weight:800; font-size:1.3rem; color:var(--vermillion-dark); margin:0 0 2px;}
   .msg-person-title{font-size:0.85rem; color:#8a7c5c; margin:0 0 16px;}
   .msg-quote{font-size:1.05rem; color:#3a3428; line-height:1.9; margin:0 0 16px; font-weight:600;}
@@ -377,6 +379,27 @@ const HOKKORI = [
 
 // 宿場到着メッセージ（先輩社労士）。stationOrder(0始まり)をキーにする。用意できた宿場だけここに追加していく
 const STATION_MESSAGES = {
+  0: { // 千住宿
+    name: '北澤正敏',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  1: { // 草加宿
+    name: '安生健司',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  2: { // 越ヶ谷宿
+    name: '下田直人',
+    title: '先輩社労士',
+    image: null,
+    lines: [
+      '手段が目的になってませんか？',
+      'なんのためにそれをやるのかを忘れずに！',
+    ],
+  },
   3: { // 粕壁宿
     name: '瀧田勝彦',
     title: '先輩社労士',
@@ -385,6 +408,111 @@ const STATION_MESSAGES = {
       'お客様に強く強く必要とされることが大事！',
       'そのためにはお客様のことを知ろうとすることが大事！',
     ],
+  },
+  4: { // 杉戸宿
+    name: '佃奈穂',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  5: { // 幸手宿
+    name: '中筋悠貴',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  6: { // 栗橋宿
+    name: '平井利宗',
+    title: '先輩社労士',
+    image: null,
+    lines: [
+      '望ましい成果を出すには、まずは自分の強みと弱みを理解しましょう。強みこそが成果の再現性を担保してくれます。',
+      'そして、大切な仲間を見つけましょう！そうすればきっと遠くまで行けるはず',
+    ],
+  },
+  7: { // 中田宿
+    name: '加藤雅也',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  8: { // 古河宿
+    name: '薗田直子',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  9: { // 野木宿
+    name: '桑原和弘',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  10: { // 間々田宿
+    name: '日比野大輔',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  11: { // 小山宿
+    name: '小山邦彦',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  12: { // 新田宿
+    name: '藤咲徳朗',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  13: { // 小金井宿
+    name: '安中繁',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  14: { // 石橋宿
+    name: '冨永聖子',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  15: { // 雀宮宿
+    name: '和久明',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  16: { // 宇都宮宿
+    name: '出口裕美',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  17: { // 徳次郎宿
+    name: '渋谷恵美',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  18: { // 大沢宿
+    name: '榎本あつし',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  19: { // 今市宿
+    name: '岩野麻子',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
+  },
+  20: { // 鉢石宿
+    name: '松山純子',
+    title: '先輩社労士',
+    image: null,
+    lines: [],
   },
 };
 const DUMMY_QUOTES = [
@@ -739,15 +867,21 @@ function showRowBgModal(r){
 
 // 先輩社労士メッセージ（顔写真つき）の中身HTML。上から：木のアイコン＋宿名／顔写真／お名前／メッセージ
 function buildStationMessageInnerHTML(stationName, icon, msg, extraNoteHTML){
+  const photoHTML = msg.image
+    ? `<img class="msg-photo" src="${msg.image}" />`
+    : `<div class="msg-photo msg-photo-placeholder">🧑‍💼</div>`;
+  const quoteHTML = (msg.lines && msg.lines.length)
+    ? `<p class="msg-quote">${msg.lines.map(l=>`「${escapeHtml(l)}」`).join('<br>')}</p>`
+    : `<p class="msg-quote msg-quote-pending">（メッセージは準備中です）</p>`;
   return `
     <div class="msg-header">
       <span class="msg-header-icon">${icon}</span>
       <span class="msg-header-name">${escapeHtml(stationName)}</span>
     </div>
-    <img class="msg-photo" src="${msg.image}" />
+    ${photoHTML}
     <p class="msg-person-name">${escapeHtml(msg.name)}</p>
     <p class="msg-person-title">${escapeHtml(msg.title)}</p>
-    <p class="msg-quote">${msg.lines.map(l=>`「${escapeHtml(l)}」`).join('<br>')}</p>
+    ${quoteHTML}
     ${extraNoteHTML || ''}
     <button class="btn btn-main" id="closeStationModalBtn">閉じる</button>
   `;
@@ -821,9 +955,9 @@ function buildMapTokensSVG(players){
             <circle cx="0" cy="0" r="50" fill="none" stroke="var(--vermillion)" stroke-width="4" class="my-token-pulse"/>
             <circle cx="0" cy="0" r="40" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="6"/>
             <text x="0" y="12" font-size="26" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
-            <text x="0" y="-66" font-size="26" text-anchor="middle">👇</text>
-            <rect x="-52" y="-104" width="104" height="32" rx="16" fill="var(--vermillion)"/>
-            <text x="0" y="-82" font-size="17" font-weight="800" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
+            <text x="0" y="-72" font-size="34" text-anchor="middle">👇</text>
+            <rect x="-78" y="-134" width="156" height="46" rx="23" fill="var(--vermillion)" stroke="#fff8ee" stroke-width="3"/>
+            <text x="0" y="-103" font-size="26" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
           </g>
         `;
       } else {
@@ -841,6 +975,9 @@ function buildMapTokensSVG(players){
 }
 function initials(name){ return (name||'?').trim().slice(0,2); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// lastRollDateの比較用。スプレッドシート側が日時形式（例：2026-09-02T00:00:00.000Z）に
+// 自動変換してしまうことがあるため、先頭10文字（YYYY-MM-DD）だけを取り出して比較する
+function dateOnly(v){ return (v || '').toString().slice(0,10); }
 // 履歴に記録する現在時刻（日本時間表示、'YYYY-MM-DD HH:MM'）
 function nowLocalStr(){
   const d = new Date();
@@ -1119,13 +1256,13 @@ function renderJoin(){
     <div class="wrap">
       <div class="join-screen">
         <h1>社労士日光街道すごろく</h1>
-        <p>日本橋から日光まで、宿場と寄り道をめぐる長丁場のすごろくです。<br>ニックネームとパスワードを入力してください。初めての方はそのまま新規登録されます。</p>
+        <p>日本橋から日光まで、宿場と寄り道をめぐる長丁場のすごろくです。<br><b>初めての方</b>は、ニックネームと一緒に、これから使う<b>合言葉（パスワード）を自由に決めて</b>入力してください。それが新規登録になります。<br><b>2回目以降</b>は、同じニックネームと、最初に決めた合言葉を入力してください。</p>
         <input id="nickInput" type="text" placeholder="ニックネーム（例：やはぎ）" maxlength="20">
-        <input id="passInput" type="password" placeholder="パスワード" maxlength="40">
+        <input id="passInput" type="password" placeholder="合言葉（初めての方はここで自由に決めてください）" maxlength="40">
         <div class="err" id="joinErr"></div>
         <button class="btn btn-main" style="width:100%" id="joinBtn">参加する / つづきから</button>
         <div class="warn-box">
-          🔒 同じニックネームで記録を続けるには、最初に決めたパスワードが必要です。パスワードは簡易的なハッシュとして保存されますが、厳重なセキュリティ用途ではないのでご了承ください。忘れると別ニックネームで再登録が必要になります。
+          🔒 同じニックネームで記録を続けるには、最初に決めた合言葉（パスワード）が必要です。厳重なセキュリティ用途ではない簡易的な仕組みです。忘れると別ニックネームでの再登録が必要になります。
         </div>
       </div>
     </div>
@@ -1224,7 +1361,7 @@ function locationLabel(position){
 function renderGame(){
   const phase = campaignPhase();
   const t = todayStr();
-  const rolledToday = PLAYER.lastRollDate === t;
+  const rolledToday = dateOnly(PLAYER.lastRollDate) === t;
   const atGoal = PLAYER.position >= GOAL_POS;
 
   let periodChip = '';
@@ -1652,7 +1789,7 @@ function showBranchChoiceModal(branch){
 
 async function rollMain(){
   const t = todayStr();
-  if(PLAYER.lastRollDate === t || PLAYER.position>=GOAL_POS) return;
+  if(dateOnly(PLAYER.lastRollDate) === t || PLAYER.position>=GOAL_POS) return;
   openDiceModal(1, 'main', '本日のサイコロ');
 }
 
