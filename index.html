@@ -1839,11 +1839,11 @@ function showBranchChoiceModal(branch){
       <div class="modal-card">
         <div class="stamp side">${branch.icon}</div>
         <h3>${escapeHtml(branch.name)}への分かれ道</h3>
-        <p class="quote">${escapeHtml(branch.trivia)}</p>
-        <p class="note">寄り道すると、今日はここで打ち止めになります（残りの出目は無効）。</p>
+        <p class="quote">この先で道が分かれています。本筋を進みますか？　それとも寄り道しますか？</p>
+        <p class="note">寄り道すると、今日はここで打ち止めになります（残りの出目は無効）。行き先は、着いてからのお楽しみです。</p>
         <div style="display:flex; gap:10px; margin-top:6px;">
           <button class="btn btn-ghost" id="branchMainBtn" style="flex:1;">本筋を進む</button>
-          <button class="btn btn-main" id="branchSideBtn" style="flex:1;">寄り道する</button>
+          <button class="btn btn-ghost" id="branchSideBtn" style="flex:1;">寄り道する</button>
         </div>
       </div>
     `;
