@@ -1856,7 +1856,7 @@ function openDiceModal(count, kind, reasonLabel){
             const branchDef = SIDEQUEST_DEFS.find(s=>s.key===arrival.key);
             PLAYER.pendingBranch = {key: branchDef.key, remaining: branchDef.distance};
             PLAYER.history.push({date: nowLocalStr(), kind:'branch_start', text:`${branchDef.name}へ寄り道開始（残り${branchDef.distance}マス）`});
-            // 「寄り道する」を選んだので、以降の出目はこの寄り道への移動に充てられる（次のループで処理）
+            break; // 寄り道を選んだ日は、ここで今日の出目を打ち止め（同じ日に到着することはない）
           }
           // 「本筋を進む」を選んだ場合は何もせず次の出目へ
         } else {
@@ -1921,7 +1921,7 @@ function showBranchChoiceModal(branch){
         <div class="stamp side">${branch.icon}</div>
         <h3>${escapeHtml(branch.name)}への分かれ道</h3>
         <p class="quote">この先で道が分かれています。本筋を進みますか？　それとも寄り道しますか？</p>
-        <p class="note">寄り道すると、そこから先はしばらく寄り道の道を進みます（本筋には戻れません）。残りの出目や翌日以降の出目を使って、寄り道先まで進んでください。行き先は、着いてからのお楽しみです。</p>
+        <p class="note">寄り道すると、今日はここで打ち止めになります。行き先は、着いてからのお楽しみです。</p>
         <div style="display:flex; gap:10px; margin-top:6px;">
           <button class="btn btn-ghost" id="branchMainBtn" style="flex:1;">本筋を進む</button>
           <button class="btn btn-ghost" id="branchSideBtn" style="flex:1;">寄り道する</button>
