@@ -1481,7 +1481,6 @@ function renderGame(){
     <section class="panel">
       <h2 class="panel-title">サイコロ ${phase==='after' ? '<span class="tag">終了</span>' : ''}</h2>
       <p class="panel-desc">1日1回、サイコロを振って先へ進めます。街道の途中には「近道」「後退」のマスもあります。該当することがあれば、ボーナスもその場で申告できます。</p>
-      <div class="honesty-banner">ボーナスは実際に起こったことを申告しよう！（妄想はだめよー）</div>
       <div class="dice-3col">
         <div class="dice-col">
           <div class="dice-col-label">本日のサイコロ</div>
@@ -1912,7 +1911,8 @@ function showChoiceModal(kind){
   div.innerHTML = `
     <div class="modal-card choice-modal-card">
       <h3>${title}</h3>
-      <p class="note" style="margin-bottom:14px;">該当するものを選んでください。</p>
+      <p class="note" style="margin-bottom:4px;">該当するものを選んでください。</p>
+      <p class="note" style="margin-bottom:14px; color:var(--vermillion); font-weight:800;">ボーナスは実際に起こったことを申告しよう！（妄想はだめよー）</p>
       <div class="choice-list">
         ${opts.map((o,i)=>`
           <button class="choice-item" data-idx="${i}">
