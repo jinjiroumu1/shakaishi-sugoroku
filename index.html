@@ -293,7 +293,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090303</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090304</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1850,11 +1850,17 @@ function openDiceModal(count, kind, reasonLabel){
             const branchDef = SIDEQUEST_DEFS.find(s=>s.key===arrival.key);
             PLAYER.pendingBranch = {key: branchDef.key, phase:'going', remaining: branchDef.distance};
             PLAYER.history.push({date: nowLocalStr(), kind:'branch_start', text:`${branchDef.name}へ寄り道開始（片道${branchDef.distance}マス）`});
-            // 「寄り道する」を選んだので、この後の出目（同じ日のボーナス分含む）はこの移動に充てられる。
-            // 今日はここで終わりなら（ボーナスの残りがなければ）、選んだことが分かるよう一言だけ表示する
-            arrivals.push({type:'branch_started', name: branchDef.name, icon: branchDef.icon});
+            if(arrival.excess > 0){
+              // 分岐に着くまでに使いきれなかった出目は、そのまま寄り道の道のりに使う
+              await processRollValue(arrival.excess, `（続き）寄り道の道を進んだ`);
+            } else {
+              // 余りがなければ、選んだことが分かるよう一言だけ表示する
+              arrivals.push({type:'branch_started', name: branchDef.name, icon: branchDef.icon});
+            }
+          } else if(arrival.excess > 0){
+            // 「本筋を進む」を選び、余りがあれば、そのまま本筋の移動に使う
+            await processRollValue(arrival.excess, `（続き）${arrival.excess}マス進んだ`);
           }
-          // 「本筋を進む」を選んだ場合は何もせず次の出目へ
         } else {
           arrivals.push(...results);
         }
@@ -2067,7 +2073,8 @@ function movePlayer(roll, text){
 
   const branch = BRANCH_POINTS[newPos];
   if(branch){
-    return [{type:'branch', key:branch.key, name:branch.name, icon:branch.icon, trivia:branch.trivia, activity:branch.activity, illustration:branch.illustration}];
+    const excess = roll - (newPos - prevPos); // 強制ストップで使いきれなかった出目
+    return [{type:'branch', key:branch.key, name:branch.name, icon:branch.icon, trivia:branch.trivia, activity:branch.activity, illustration:branch.illustration, excess}];
   }
 
   const w = wpAt(newPos);
