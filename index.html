@@ -90,10 +90,10 @@
   .route-scroll{overflow-x:auto; padding:18px 4px 14px;}
   .map-wrap{width:100%; margin:0 auto;}
   .map-svg{transition: none;}
-  .my-token-pulse{animation: mapPulse 1.6s ease-out infinite;}
+  .my-token-pulse{animation: mapPulse 1.6s ease-out infinite; transform-origin: 0 0;}
   @keyframes mapPulse{
-    0%{ r:26; opacity:0.9; }
-    100%{ r:52; opacity:0; }
+    0%{ transform: scale(0.5); opacity:0.9; }
+    100%{ transform: scale(1.1); opacity:0; }
   }
   .my-token-marker{ }
   .map-toolbar{display:flex; justify-content:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
