@@ -1906,10 +1906,12 @@ function showEpisodeModal(kind, idx){
 function movePlayer(roll, text){
   const prevPos = PLAYER.position;
   const stationPositions = MAP_NODES.filter(n=>n.type==='station' && !n.isGoal).map(n=>n.pos);
+  const branchPositions = Object.keys(BRANCH_POINTS).map(Number);
+  const stopPositions = [...stationPositions, ...branchPositions]; // 宿場・寄り道の分岐点、どちらも通り過ぎず必ず止まる
   let targetPos = Math.min(GOAL_POS, prevPos + roll);
-  // 宿場を通り過ぎる場合は、途中の最初の宿場で強制的に止まる（大きい目が出ても素通りしない）
-  const passedStations = stationPositions.filter(p => p > prevPos && p <= targetPos).sort((a,b)=>a-b);
-  let newPos = passedStations.length ? passedStations[0] : targetPos;
+  // 宿場・寄り道を通り過ぎる場合は、途中の最初のマスで強制的に止まる（大きい目が出ても素通りしない）
+  const passedStops = stopPositions.filter(p => p > prevPos && p <= targetPos).sort((a,b)=>a-b);
+  let newPos = passedStops.length ? passedStops[0] : targetPos;
   PLAYER.position = newPos;
   PLAYER.history.push({date: nowLocalStr(), kind:'move', text});
 
