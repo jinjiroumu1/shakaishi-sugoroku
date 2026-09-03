@@ -1805,43 +1805,29 @@ function openDiceModal(count, kind, reasonLabel){
     const reasonText = kind==='main' ? '本日のサイコロ' : reasonLabel;
     const arrivals = [];
     let total = 0;
-    let stoppedAtBranch = false;
-    for(const v of values){
-      total += v;
-      const text = kind==='main'
-        ? `本日のサイコロで${v}が出て、${v}マス進んだ`
-        : `（${reasonText}）ボーナスサイコロで${v}が出て、${v}マス進んだ`;
 
+    // 出目を1つ処理する（寄り道の行き／帰りの途中なら、その移動に充てる。再帰的に余りも処理する）
+    async function processRollValue(v, text){
       if(PLAYER.pendingBranch){
-        // 寄り道への道の途中：この出目を、寄り道までの残り距離に充てる
         const pb = PLAYER.pendingBranch;
         const branchDef = SIDEQUEST_DEFS.find(s=>s.key===pb.key);
         const useAmount = Math.min(v, pb.remaining);
         pb.remaining -= useAmount;
         const leftover = v - useAmount;
-        PLAYER.history.push({date: nowLocalStr(), kind:'move', text:`${branchDef.name}への道を${useAmount}マス進んだ`});
+        PLAYER.history.push({date: nowLocalStr(), kind:'move', text:`${branchDef.name}への道を${useAmount}マス${pb.phase==='going'?'進んだ':'戻った'}`});
         if(pb.remaining <= 0){
-          // 寄り道に到着！
-          PLAYER.pendingBranch = null;
-          PLAYER.history.push({date: nowLocalStr(), kind:'branch', text:`${branchDef.name}に到着（${branchDef.activity}）`});
-          arrivals.push({type:'branch', key:branchDef.key, name:branchDef.name, icon:branchDef.icon, trivia:branchDef.trivia, activity:branchDef.activity, illustration:branchDef.illustration});
-          if(leftover > 0){
-            // 到着してなお余った分は、そのまま本筋を進む
-            const leftoverText = `（続き）${leftover}マス進んだ`;
-            const results2 = movePlayer(leftover, leftoverText) || [];
-            if(results2.length === 1 && results2[0].type==='branch'){
-              const arrival2 = results2[0];
-              div.style.display = 'none';
-              const choice2 = await showBranchChoiceModal(arrival2);
-              div.style.display = '';
-              if(choice2 === 'side'){
-                const branchDef2 = SIDEQUEST_DEFS.find(s=>s.key===arrival2.key);
-                PLAYER.pendingBranch = {key: branchDef2.key, remaining: branchDef2.distance};
-                PLAYER.history.push({date: nowLocalStr(), kind:'branch_start', text:`${branchDef2.name}へ寄り道開始（残り${branchDef2.distance}マス）`});
-              }
-            } else {
-              arrivals.push(...results2);
-            }
+          if(pb.phase === 'going'){
+            // 田心カフェ等に到着！折り返して、同じ距離を本筋へ戻る
+            PLAYER.history.push({date: nowLocalStr(), kind:'branch', text:`${branchDef.name}に到着（${branchDef.activity}）`});
+            arrivals.push({type:'branch', key:branchDef.key, name:branchDef.name, icon:branchDef.icon, trivia:branchDef.trivia, activity:branchDef.activity, illustration:branchDef.illustration});
+            pb.phase = 'returning';
+            pb.remaining = branchDef.distance;
+            if(leftover > 0) await processRollValue(leftover, `（続き）`);
+          } else {
+            // 分岐点まで戻ってきた。ここから先は本筋の移動として、余りをそのまま使う
+            PLAYER.pendingBranch = null;
+            PLAYER.history.push({date: nowLocalStr(), kind:'move', text:`${branchDef.name}から本筋に戻った`});
+            if(leftover > 0) await processRollValue(leftover, `（続き）${leftover}マス進んだ`);
           }
         }
         // pb.remainingがまだ残っていれば、今日はここまで（何も表示しない＝継続中）
@@ -1854,20 +1840,24 @@ function openDiceModal(count, kind, reasonLabel){
           div.style.display = '';
           if(choice === 'side'){
             const branchDef = SIDEQUEST_DEFS.find(s=>s.key===arrival.key);
-            PLAYER.pendingBranch = {key: branchDef.key, remaining: branchDef.distance};
-            PLAYER.history.push({date: nowLocalStr(), kind:'branch_start', text:`${branchDef.name}へ寄り道開始（残り${branchDef.distance}マス）`});
-            break; // 寄り道を選んだ日は、ここで今日の出目を打ち止め（同じ日に到着することはない）
+            PLAYER.pendingBranch = {key: branchDef.key, phase:'going', remaining: branchDef.distance};
+            PLAYER.history.push({date: nowLocalStr(), kind:'branch_start', text:`${branchDef.name}へ寄り道開始（片道${branchDef.distance}マス）`});
+            // 「寄り道する」を選んだので、この後の出目（同じ日のボーナス分含む）はこの移動に充てられる
           }
           // 「本筋を進む」を選んだ場合は何もせず次の出目へ
         } else {
           arrivals.push(...results);
         }
       }
-      if(PLAYER.position>=GOAL_POS) break;
     }
-    if(PLAYER.pendingBranch){
-      const branchDef = SIDEQUEST_DEFS.find(s=>s.key===PLAYER.pendingBranch.key);
-      arrivals.push({type:'branch_pending', name: branchDef.name, icon: branchDef.icon, remaining: PLAYER.pendingBranch.remaining});
+
+    for(const v of values){
+      total += v;
+      const text = kind==='main'
+        ? `本日のサイコロで${v}が出て、${v}マス進んだ`
+        : `（${reasonText}）ボーナスサイコロで${v}が出て、${v}マス進んだ`;
+      await processRollValue(v, text);
+      if(PLAYER.position>=GOAL_POS) break;
     }
     // ポップアップはフェードしながら閉じて、盤面上でコマが動く様子を見せる（保存は裏で並行して進める）
     div.classList.add('fade-out');
@@ -1921,7 +1911,7 @@ function showBranchChoiceModal(branch){
         <div class="stamp side">${branch.icon}</div>
         <h3>${escapeHtml(branch.name)}への分かれ道</h3>
         <p class="quote">この先で道が分かれています。本筋を進みますか？　それとも寄り道しますか？</p>
-        <p class="note">寄り道すると、今日はここで打ち止めになります。行き先は、着いてからのお楽しみです。</p>
+        <p class="note">寄り道すると、そこまでの道のりを出目で進みます。ちょうど辿り着くと到着、その後は同じ道を戻ってから本筋に合流します。</p>
         <div style="display:flex; gap:10px; margin-top:6px;">
           <button class="btn btn-ghost" id="branchMainBtn" style="flex:1;">本筋を進む</button>
           <button class="btn btn-ghost" id="branchSideBtn" style="flex:1;">寄り道する</button>
