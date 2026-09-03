@@ -293,6 +293,7 @@
 </style>
 </head>
 <body>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090301</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -2135,7 +2136,7 @@ function showArrivalModal(w, onClose){
     }
   } else if(isBranch){
     title = w.icon + ' ' + w.name + 'へ寄り道';
-    quote = `${w.activity}をしました。`;
+    quote = `${w.activity}をしました。<br><span style="font-size:0.78rem;">来た道を歩いて、分岐点まで戻ります。</span>`;
     stampText = '寄り道';
     stampCls = 'side';
     illustrationHTML = `<div class="branch-illustration">${w.illustration}</div>`;
@@ -2163,7 +2164,7 @@ function showArrivalModal(w, onClose){
         ${illustrationHTML}
         <h3>${title}</h3>
         <p class="quote">${quote}</p>
-        <p class="note">${isBranchStarted ? '※明日以降、サイコロを振ると寄り道の続きを進みます。' : isBranch ? '※明日はこの場所から本筋を進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
+        <p class="note">${isBranchStarted ? '※明日以降、サイコロを振ると寄り道の続きを進みます。' : isBranch ? '※明日以降、サイコロを振ると分岐点への帰り道を進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
         <button class="btn btn-main" id="closeModalBtn">閉じる</button>
       </div>
     `;
