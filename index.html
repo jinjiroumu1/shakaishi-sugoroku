@@ -965,7 +965,7 @@ function showBranchInfoModal(key){
     `;
   }
   document.body.appendChild(div);
-  const closeBtn = document.getElementById('closeBranchInfoBtn') || document.getElementById('closeStationModalBtn');
+  const closeBtn = div.querySelector('#closeBranchInfoBtn') || div.querySelector('#closeStationModalBtn');
   if(closeBtn) closeBtn.onclick = ()=> div.remove();
 }
 
@@ -994,7 +994,7 @@ function showStationInfoModal(i){
     `;
   }
   document.body.appendChild(div);
-  document.getElementById('closeStationModalBtn').onclick = ()=> div.remove();
+  div.querySelector('#closeStationModalBtn').onclick = ()=> div.remove();
 }
 
 function buildMapTokensSVG(players){
@@ -1019,9 +1019,9 @@ function buildMapTokensSVG(players){
             <circle cx="0" cy="0" r="50" fill="none" stroke="var(--vermillion)" stroke-width="4" class="my-token-pulse"/>
             <circle cx="0" cy="0" r="40" fill="${colorFor(p.nickname)}" stroke="#fff8ee" stroke-width="6"/>
             <text x="0" y="12" font-size="26" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">${escapeHtml(initials(p.nickname))}</text>
-            <text x="0" y="-96" font-size="102" text-anchor="middle">👇</text>
-            <rect x="-234" y="-234" width="468" height="138" rx="69" fill="var(--vermillion)" stroke="#fff8ee" stroke-width="6"/>
-            <text x="0" y="-141" font-size="78" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
+            <text x="0" y="-66" font-size="102" text-anchor="middle">👇</text>
+            <rect x="-234" y="-204" width="468" height="138" rx="69" fill="var(--vermillion)" stroke="#fff8ee" stroke-width="6"/>
+            <text x="0" y="-111" font-size="78" font-weight="900" text-anchor="middle" fill="#fff8ee" font-family="'Zen Kaku Gothic New', sans-serif">あなた</text>
           </g>
         `;
       } else {
@@ -2082,8 +2082,10 @@ function showArrivalModal(w, onClose){
     `;
   }
   document.body.appendChild(div);
-  document.getElementById('closeModalBtn') && (document.getElementById('closeModalBtn').onclick = ()=>{ div.remove(); if(onClose) onClose(); });
-  document.getElementById('closeStationModalBtn') && (document.getElementById('closeStationModalBtn').onclick = ()=>{ div.remove(); if(onClose) onClose(); });
+  const closeModalBtn = div.querySelector('#closeModalBtn');
+  if(closeModalBtn) closeModalBtn.onclick = ()=>{ div.remove(); if(onClose) onClose(); };
+  const closeStationModalBtn = div.querySelector('#closeStationModalBtn');
+  if(closeStationModalBtn) closeStationModalBtn.onclick = ()=>{ div.remove(); if(onClose) onClose(); };
 }
 
 /* ============ 起動 ============ */
