@@ -1842,7 +1842,9 @@ function openDiceModal(count, kind, reasonLabel){
             const branchDef = SIDEQUEST_DEFS.find(s=>s.key===arrival.key);
             PLAYER.pendingBranch = {key: branchDef.key, phase:'going', remaining: branchDef.distance};
             PLAYER.history.push({date: nowLocalStr(), kind:'branch_start', text:`${branchDef.name}へ寄り道開始（片道${branchDef.distance}マス）`});
-            // 「寄り道する」を選んだので、この後の出目（同じ日のボーナス分含む）はこの移動に充てられる
+            // 「寄り道する」を選んだので、この後の出目（同じ日のボーナス分含む）はこの移動に充てられる。
+            // 今日はここで終わりなら（ボーナスの残りがなければ）、選んだことが分かるよう一言だけ表示する
+            arrivals.push({type:'branch_started', name: branchDef.name, icon: branchDef.icon});
           }
           // 「本筋を進む」を選んだ場合は何もせず次の出目へ
         } else {
@@ -2099,13 +2101,13 @@ function showArrivalQueue(list){
 function showArrivalModal(w, onClose){
   const isGoal = w.type==='goal' || w.isGoal;
   const isBranch = w.type==='branch';
-  const isBranchPending = w.type==='branch_pending';
+  const isBranchStarted = w.type==='branch_started';
   const isSpecial = w.type==='special';
   let quote, title, stampText, stampCls='', illustrationHTML='', isRealMessage=false, realMsgHTML='';
-  if(isBranchPending){
-    title = w.icon + ' 寄り道の途中';
-    quote = `${w.name}への道の途中です。あと${w.remaining}マスで到着します。`;
-    stampText = '道中';
+  if(isBranchStarted){
+    title = w.icon + ' 寄り道へ出発';
+    quote = `${w.name}へ向かっています。到着すると、あらためてお知らせします。`;
+    stampText = '出発';
     stampCls = 'side';
   } else if(isGoal){
     isRealMessage = true;
@@ -2161,7 +2163,7 @@ function showArrivalModal(w, onClose){
         ${illustrationHTML}
         <h3>${title}</h3>
         <p class="quote">${quote}</p>
-        <p class="note">${isBranchPending ? '※明日以降、サイコロを振ると寄り道の続きを進みます。' : isBranch ? '※明日はこの場所から本筋を進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
+        <p class="note">${isBranchStarted ? '※明日以降、サイコロを振ると寄り道の続きを進みます。' : isBranch ? '※明日はこの場所から本筋を進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
         <button class="btn btn-main" id="closeModalBtn">閉じる</button>
       </div>
     `;
