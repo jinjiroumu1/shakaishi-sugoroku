@@ -293,7 +293,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090304</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090305</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1853,8 +1853,9 @@ function openDiceModal(count, kind, reasonLabel){
             if(arrival.excess > 0){
               // 分岐に着くまでに使いきれなかった出目は、そのまま寄り道の道のりに使う
               await processRollValue(arrival.excess, `（続き）寄り道の道を進んだ`);
-            } else {
-              // 余りがなければ、選んだことが分かるよう一言だけ表示する
+            }
+            // まだ到着していなければ（＝到着カードが出ていなければ）、選んだ／進んだことが分かるよう表示する
+            if(PLAYER.pendingBranch && PLAYER.pendingBranch.phase === 'going'){
               arrivals.push({type:'branch_started', name: branchDef.name, icon: branchDef.icon});
             }
           } else if(arrival.excess > 0){
