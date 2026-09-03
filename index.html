@@ -1287,7 +1287,7 @@ function renderJoin(){
 async function join(nickname, password){
   const errEl = document.getElementById('joinErr');
   if(!nickname){ if(errEl) errEl.textContent = 'ニックネームを入力してください'; return; }
-  if(!password){ if(errEl) errEl.textContent = 'パスワードを入力してください'; return; }
+  if(!password){ if(errEl) errEl.textContent = '合言葉を入力してください'; return; }
   if(errEl) errEl.textContent = '';
   app.innerHTML = `<div class="wrap"><div class="loading-screen"><div class="loading-dice">🎲</div><div class="loading-road">🏯 〜〜〜 ⛩️</div><div class="loading-text">読み込んでいます…</div></div></div>`;
   const hash = await sha256Hex(password);
@@ -1296,7 +1296,7 @@ async function join(nickname, password){
     renderJoin();
     document.getElementById('nickInput').value = nickname;
     document.getElementById('joinErr').textContent =
-      (r && r.error==='bad_password') ? 'パスワードが違います。もう一度入力してください。' :
+      (r && r.error==='bad_password') ? 'そのニックネームは、すでに他の方が使っている可能性があります。合言葉が違う場合はもう一度入力するか、別のニックネームをお試しください。' :
       (r && r.error==='network') ? '通信に失敗しました。時間をおいて再度お試しください。' :
       'エラーが発生しました。';
     return;
@@ -1563,7 +1563,7 @@ function renderGame(){
 
     <div class="footer-note">
       ※ 宿場・寄り道到着メッセージは仮の文言です。後日、実際の先輩社労士のメッセージ等に差し替え予定です。<br>
-      ※ 参加者の記録・掲示板の投稿はニックネーム単位で全員から見える共有データとして保存されます（パスワードは簡易ハッシュ保存）。
+      ※ 参加者の記録・掲示板の投稿はニックネーム単位で全員から見える共有データとして保存されます（合言葉は簡易ハッシュ保存）。
     </div>
   </div>
   `;
