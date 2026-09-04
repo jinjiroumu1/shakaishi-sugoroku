@@ -1016,7 +1016,7 @@ function showBranchInfoModal(key){
   if(closeBtn) closeBtn.onclick = ()=> div.remove();
 }
 
-const TEST_STATION_MESSAGE_PREVIEW = false; // 本番：到達済みの宿場のみ先生メッセージを表示
+const TEST_STATION_MESSAGE_PREVIEW = true; // テスト環境用：未到達の宿場も先生メッセージを確認できる
 function showStationInfoModal(i){
   const n = MAP_NODES[i];
   if(!n) return;
