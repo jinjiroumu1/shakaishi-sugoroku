@@ -166,7 +166,7 @@
 
   .modal-backdrop{position:fixed; inset:0; background:rgba(16,20,30,0.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; opacity:1; transition: opacity 0.28s ease;}
   .modal-backdrop.fade-out{opacity:0;}
-  .modal-card{background:#fffaf0; border-radius:16px; max-width:420px; width:100%; padding:28px 24px 24px; position:relative; text-align:center; box-shadow:0 24px 60px -20px rgba(0,0,0,0.5);}
+  .modal-card{background:#fffaf0; border-radius:16px; max-width:420px; width:100%; padding:28px 24px 24px; position:relative; text-align:center; box-shadow:0 24px 60px -20px rgba(0,0,0,0.5); max-height:88vh; overflow-y:auto;}
   .modal-close-x{position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; border:none; background:rgba(0,0,0,0.06); color:#8a7c5c; font-size:1.1rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;}
   .modal-close-x:hover{background:rgba(0,0,0,0.12); color:#4a4433;}
   .stamp{width:88px; height:88px; border-radius:50%; border:5px solid var(--vermillion); color:var(--vermillion); display:flex; align-items:center; justify-content:center; font-family:'Shippori Mincho', serif; font-weight:800; font-size:0.9rem; margin:0 auto 14px; transform:rotate(-8deg) scale(0); animation:stampIn 0.45s cubic-bezier(.2,1.4,.4,1) forwards; animation-delay:0.15s;}
@@ -192,7 +192,7 @@
   .modal-card p.note{font-size:0.68rem; color:#a99a72; margin:0 0 18px;}
 
   /* 先輩社労士メッセージ（顔写真つき）専用レイアウト */
-  .modal-card.msg-card{max-width:480px;}
+  .modal-card.msg-card{max-width:600px;}
   .msg-header{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:16px;}
   .msg-header-icon{font-size:2rem; line-height:1;}
   .msg-header-name{font-family:'Shippori Mincho', serif; font-weight:800; font-size:1.15rem; color:var(--indigo-900);}
@@ -293,7 +293,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090408</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090409</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
