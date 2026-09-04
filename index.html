@@ -293,7 +293,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090406</div>
+<div id="buildVersionBadge" style="display:none; position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090406</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -736,7 +736,7 @@ let MAP_VB_W, MAP_VB_H, MAP_ROWS;
   }
   MAP_ROWS = row + 1;
   MAP_VB_W = MAP_PAD_X*2 + MAX_ROW_WIDTH;
-  MAP_VB_H = MAP_PAD_Y + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H + MAP_CELL_H/2 + MAP_PAD_Y + 460; // ゴールパネルを下にずらした分の余白
+  MAP_VB_H = MAP_PAD_Y + MAP_TOP_EXTRA + (MAP_ROWS-1)*MAP_CELL_H + MAP_CELL_H/2 + MAP_PAD_Y + 560; // ゴールパネルを下にずらした分の余白
 })();
 
 function seededRand(seed){ const x = Math.sin(seed*999.7)*10000; return x - Math.floor(x); }
@@ -926,7 +926,7 @@ function buildMapStaticSVG(){
 
   // 中心のゴールパネル（日光東照宮のイメージ）。鉢石宿の真下にずらして、宿場パネルと重ならないようにする
   const goalNode = MAP_NODES[MAP_NODES.length-1];
-  const gx = goalNode.x, gy = goalNode.y + 260;
+  const gx = goalNode.x, gy = goalNode.y + 340;
   const GW = 360, GH = 360;
   const goalPanel = `
     <g class="map-node" onclick="showStationInfoModal(${MAP_NODES.length-1})" style="cursor:pointer;">
@@ -1008,7 +1008,7 @@ function showBranchInfoModal(key){
   if(closeBtn) closeBtn.onclick = ()=> div.remove();
 }
 
-const TEST_STATION_MESSAGE_PREVIEW = true; // 9/4本番までの確認用。本番ではfalseにする（通過時のみ表示に戻る）
+const TEST_STATION_MESSAGE_PREVIEW = false; // 本番：到達済みの宿場のみ先生メッセージを表示
 function showStationInfoModal(i){
   const n = MAP_NODES[i];
   if(!n) return;
@@ -1478,7 +1478,7 @@ async function refreshAll(){
 }
 // テスト中はtrueにしておくと、開始日(9/4)前でもサイコロを振れます。
 // 本番開始前にfalseに戻し、スプレッドシートのテストデータも削除してください。
-const TEST_MODE = true;
+const TEST_MODE = false;
 
 function campaignPhase(){
   if(TEST_MODE) return 'active';
