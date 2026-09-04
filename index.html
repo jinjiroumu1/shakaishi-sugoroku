@@ -293,7 +293,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090305</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090306</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -882,10 +882,7 @@ function buildMapStaticSVG(){
   });
 
   // 寄り道の分岐バブル（行き・帰りは別ルート＝2本のカーブ。見た目は本筋と同じ白いマス）
-  function quadAt(p0, ctrl, p1, t){
-    const mt = 1-t;
-    return { x: mt*mt*p0.x + 2*mt*t*ctrl.x + t*t*p1.x, y: mt*mt*p0.y + 2*mt*t*ctrl.y + t*t*p1.y };
-  }
+  // quadAtはグローバル関数（コマの位置計算とも共通化）
   let branches = '';
   Object.keys(BRANCH_POINTS).forEach(posStr=>{
     const pos = Number(posStr);
@@ -1034,10 +1031,46 @@ function showStationInfoModal(i){
   div.querySelector('#closeStationModalBtn').onclick = ()=> div.remove();
 }
 
+// 寄り道の行き・帰りの道（quadAtと同じ計算式。コマの位置計算にも使う）
+function quadAt(p0, ctrl, p1, t){
+  const mt = 1-t;
+  return { x: mt*mt*p0.x + 2*mt*t*ctrl.x + t*t*p1.x, y: mt*mt*p0.y + 2*mt*t*ctrl.y + t*t*p1.y };
+}
+function findBranchPos(key){
+  for(const posStr of Object.keys(BRANCH_POINTS)){
+    if(BRANCH_POINTS[posStr].key === key) return Number(posStr);
+  }
+  return null;
+}
+// 寄り道の途中なら、バブルへの道の上の位置を返す。そうでなければ通常の本筋の位置を返す
+function getMyTokenXY(){
+  if(PLAYER && PLAYER.pendingBranch){
+    const pb = PLAYER.pendingBranch;
+    const branchPos = findBranchPos(pb.key);
+    const branchDef = SIDEQUEST_DEFS.find(s=>s.key===pb.key);
+    if(branchPos != null && branchDef){
+      const attach = playerXY(branchPos);
+      const bx = attach.x - 15, by = attach.y - 330;
+      const goStart = {x: attach.x - 40, y: attach.y - 10};
+      const goCtrl = {x: attach.x + 110, y: (attach.y + by)/2};
+      const goEnd = {x: bx + 30, y: by + 40};
+      const backStart = {x: bx - 30, y: by + 45};
+      const backCtrl = {x: attach.x - 130, y: (attach.y + by)/2};
+      const backEnd = {x: attach.x + 70, y: attach.y - 10};
+      let t = (branchDef.distance - pb.remaining) / branchDef.distance;
+      t = Math.min(1, Math.max(0, t));
+      return pb.phase === 'going' ? quadAt(goStart, goCtrl, goEnd, t) : quadAt(backStart, backCtrl, backEnd, t);
+    }
+  }
+  return PLAYER ? playerXY(PLAYER.position) : {x:0,y:0};
+}
+
 function buildMapTokensSVG(players){
   const groups = {};
   players.forEach(p=>{
-    const key = Math.round(playerXY(p.position).x)+','+Math.round(playerXY(p.position).y);
+    const isMe = p.nickname===ME;
+    const xy = (isMe && PLAYER && PLAYER.pendingBranch) ? getMyTokenXY() : playerXY(p.position);
+    const key = Math.round(xy.x)+','+Math.round(xy.y);
     (groups[key] = groups[key] || []).push(p);
   });
   let svg = '<g style="pointer-events:none;">';
@@ -1046,9 +1079,9 @@ function buildMapTokensSVG(players){
     // 自分がいるグループなら自分を先頭に（重なったとき手前に見えるように）
     list.sort((a,b)=> (a.nickname===ME?-1:0) - (b.nickname===ME?-1:0));
     list.forEach((p,idx)=>{
-      const {x,y} = playerXY(p.position);
-      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 30 : 0;
       const isMe = p.nickname===ME;
+      const {x,y} = (isMe && PLAYER && PLAYER.pendingBranch) ? getMyTokenXY() : playerXY(p.position);
+      const jitter = list.length>1 ? (idx - (list.length-1)/2) * 30 : 0;
       const tx = x+jitter, ty = y;
       if(isMe){
         svg += `
@@ -1138,7 +1171,7 @@ function centerMapOn(x, y){
 function focusMapOnMe(){
   if(!PLAYER) return;
   MAP_SCALE = 2;
-  const {x,y} = playerXY(PLAYER.position);
+  const {x,y} = getMyTokenXY();
   centerMapOn(x,y);
   scrollPageToMapPoint(y);
 }
@@ -1881,7 +1914,7 @@ function openDiceModal(count, kind, reasonLabel){
     await new Promise(res=>setTimeout(res, 280));
     div.remove();
     MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0; applyMapTransform();
-    const startXY = playerXY(startPos), endXY = playerXY(PLAYER.position);
+    const startXY = playerXY(startPos), endXY = getMyTokenXY();
     scrollPageToMapPoint((startXY.y+endXY.y)/2); // 移動区間が画面に映るよう、ページごとスクロール
     const savePromise = apiSave(PLAYER);
     await new Promise(res=>setTimeout(res, 150)); // スクロールが落ち着くまで少し待つ
@@ -1899,7 +1932,7 @@ async function animateMyTokenTo(fromPos, toPos){
   if(!g) return;
   const steps = Math.max(0, Math.round(toPos - fromPos));
   if(steps === 0){
-    const {x,y} = playerXY(toPos);
+    const {x,y} = getMyTokenXY(); // 寄り道の途中ならバブルへの道の上、そうでなければ通常の位置
     g.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)})`);
     return;
   }
