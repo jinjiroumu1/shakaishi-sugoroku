@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091404</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091501</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1313,6 +1313,18 @@ async function apiJoin(nickname, passwordHash){
   try{ return await apiCall('join', {nickname, passwordHash}); }
   catch(e){ return {ok:false, error:'network'}; }
 }
+async function apiCreateInvite(){
+  try{ return await apiCall('createInvite', {}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
+async function apiCheckInvite(token){
+  try{ return await apiCall('checkInvite', {token}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
+async function apiJoinWithInvite(token, nickname, passwordHash){
+  try{ return await apiCall('joinWithInvite', {token, nickname, passwordHash}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
 async function apiSaveProfile(nickname, passwordHash, realName, email){
   try{ return await apiCall('saveProfile', {nickname, passwordHash, realName, email}); }
   catch(e){ return {ok:false, error:'network'}; }
@@ -1457,6 +1469,88 @@ function renderJoin(){
   document.getElementById('joinBtn').onclick = doJoin;
   document.getElementById('passInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doJoin(); });
   document.getElementById('newRegisterBtn').onclick = showNewUserRedirectModal;
+}
+
+// ?admin=invite でアクセスした時だけ出る、招待URL発行画面（矢萩さん専用。一般には案内しない）
+function renderAdminInviteScreen(){
+  app.innerHTML = `
+    <div class="wrap">
+      <div class="join-screen">
+        <h1>招待URLの発行</h1>
+        <p>ボタンを押すと、<b>1回だけ新規登録できる専用URL</b>が発行されます。追加したい人数分、必要な回数だけ押してください。発行したURLは、それぞれ別の1人にだけお渡しください。</p>
+        <button class="btn btn-main" style="width:100%" id="createInviteBtn">招待URLを1件発行する</button>
+        <div id="inviteList" style="margin-top:16px; text-align:left;"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('createInviteBtn').onclick = async ()=>{
+    const btn = document.getElementById('createInviteBtn');
+    btn.disabled = true; btn.textContent = '発行中…';
+    const r = await apiCreateInvite();
+    btn.disabled = false; btn.textContent = '招待URLを1件発行する';
+    if(r && r.ok){
+      const url = `${location.origin}${location.pathname}?invite=${r.token}`;
+      const list = document.getElementById('inviteList');
+      const row = document.createElement('div');
+      row.style.cssText = 'background:#fff8ee; border:1px solid #e8dcc0; border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:0.85rem; word-break:break-all;';
+      row.textContent = url;
+      list.prepend(row);
+    } else {
+      alert('発行に失敗しました。時間をおいて再度お試しください。');
+    }
+  };
+}
+
+// ?invite=トークン でアクセスした人向けの、1回限りの新規登録画面
+function renderInviteJoinScreen(token){
+  app.innerHTML = `<div class="wrap"><div class="loading-screen"><div class="loading-dice">🎲</div><div class="loading-text">確認しています…</div></div></div>`;
+  apiCheckInvite(token).then(r=>{
+    if(!r || !r.ok || !r.valid){
+      app.innerHTML = `
+        <div class="wrap">
+          <div class="join-screen">
+            <h1>このURLはご利用いただけません</h1>
+            <p>このURLはすでに使用済みか、無効になっています。お手数ですが、ご案内された方にご確認ください。</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    app.innerHTML = `
+      <div class="wrap">
+        <div class="join-screen">
+          <h1>新規登録</h1>
+          <p>ニックネームと、これから使う合言葉（パスワード）を自由に決めて入力してください。</p>
+          <input id="nickInput" type="text" placeholder="ニックネーム" maxlength="20">
+          <input id="passInput" type="password" placeholder="合言葉（自由に決めてください）" maxlength="40">
+          <div class="err" id="joinErr"></div>
+          <button class="btn btn-main" style="width:100%" id="inviteJoinBtn">登録する</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('inviteJoinBtn').onclick = async ()=>{
+      const errEl = document.getElementById('joinErr');
+      const nickname = document.getElementById('nickInput').value.trim();
+      const password = document.getElementById('passInput').value;
+      if(!nickname){ errEl.textContent = 'ニックネームを入力してください'; return; }
+      if(!password){ errEl.textContent = '合言葉を入力してください'; return; }
+      errEl.textContent = '';
+      document.getElementById('inviteJoinBtn').disabled = true;
+      const hash = await sha256Hex(password);
+      const jr = await apiJoinWithInvite(token, nickname, hash);
+      if(!jr || !jr.ok){
+        document.getElementById('inviteJoinBtn').disabled = false;
+        errEl.textContent =
+          (jr && jr.error==='invite_used') ? 'このURLはすでに使用済みです。' :
+          (jr && jr.error==='nickname_taken') ? 'そのニックネームはすでに使われています。別のニックネームをお試しください。' :
+          '登録に失敗しました。時間をおいて再度お試しください。';
+        return;
+      }
+      saveLoginToStorage(nickname, hash);
+      history.replaceState(null, '', location.pathname); // URLから招待トークンを消しておく
+      await finishLogin(nickname, hash, jr.player);
+    };
+  });
 }
 
 const INQUIRY_EMAIL = 'info@jinji-roumu.com';
@@ -1655,6 +1749,14 @@ function renderGame(){
       </div>
     </div>
 
+    <section class="panel">
+      <h2 class="panel-title">みんなで遊ぼう！社労士日光街道すごろく</h2>
+      <p class="panel-desc">日光街道の宿場町をすごろくで進みながら仲間の社労士と共通体験を重ねていきます。宿場町につけば、いろんな社労士が熱いメッセージを贈ってくれます。<br>
+実際の社労士生活で嬉しいことがあった時は、コメントで共有し、みんなと喜びを分かち合いましょう。<br>
+バーチャルなすごろくの中に少しだけ実際の日常がまぎれこむ社労士仲間のほっこりすごろくです。<br>
+みんなでゴールの日光を目指しましょう！</p>
+    </section>
+
     ${phase==='before' ? `
     <section class="panel">
       <h2 class="panel-title">まだ開始前です</h2>
@@ -1664,6 +1766,17 @@ function renderGame(){
     ${phase!=='before' ? `
     <section class="panel">
       <h2 class="panel-title">サイコロ ${phase==='after' ? '<span class="tag">終了</span>' : ''}</h2>
+      <div class="panel-desc" style="background:rgba(199,154,62,0.12); border:1px solid rgba(199,154,62,0.4); border-radius:10px; padding:12px 16px; margin-bottom:14px;">
+        <b>遊び方ルール</b><br>
+        ・1日1回サイコロふれます。<br>
+        ・実際の社労士生活でうれしいことがあれば、みんなに共有。追加でもう1回サイコロがふれます。<br>
+        ・仲間を応援したり、祝福できます。応援された人は1回サイコロふれます。<br>
+        ・宿場町までついたら、先輩社労士からのメッセージがみれます。<br>
+        ・参加人数は、最大20名です。5名がゴールしたら、そのゲームは終了します（新たなゲームに引き続き参加できます）<br>
+        ・ゴールした5名にはお祝いとして、サムライコインを進呈します（変更する場合あり）<br>
+        ・1か月間稼働しないプレーヤーは他の参加希望者のために卒業とします。<br>
+        ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的に参加ください！
+      </div>
       <p class="panel-desc">1日1回、サイコロを振って先へ進めます。街道の途中には「近道」「後退」のマスもあります。該当することがあれば、ボーナスもその場で申告できます。</p>
       <div class="dice-3col">
         <div class="dice-col">
@@ -2291,22 +2404,16 @@ function showArrivalModal(w, onClose){
   } else if(isSpecial){
     const isForward = w.kind==='forward';
     if(w.specialMessage){
-      // 新しい「出来事マス」（メッセージ・アイコンをそのまま使う）
+      // 出来事マス（現在、全ての特殊マスはこちらの形式）
       title = (w.specialIcon || (isForward?'🐎':'🌀')) + ' ' + w.specialMessage;
-      quote = `結果、宿場「${w.targetName}」まで${isForward?'進みました':'戻ることになりました'}。`;
+      quote = '';
       stampText = isForward ? '前進' : '後退';
       stampCls = isForward ? 'forward' : 'back';
-    } else if(isForward){
-      title = '🐎 近道！一気に前進';
-      quote = `馬が疾走！次の宿場「${w.targetName}」まで一気に進みました。`;
-      stampText = '近道';
-      stampCls = 'forward';
     } else {
-      const n = w.kind==='back1' ? 'ひとつ' : 'ふたつ';
-      title = '😮 足止め…後退';
-      quote = `事情があって、${n}前の宿場「${w.targetName}」まで戻ることになりました。`;
-      stampText = '後退';
-      stampCls = 'back';
+      title = isForward ? '🐎 近道！一気に前進' : '😮 足止め…後退';
+      quote = '';
+      stampText = isForward ? '前進' : '後退';
+      stampCls = isForward ? 'forward' : 'back';
     }
   } else if(isBranch){
     title = w.icon + ' ' + w.name + 'へ寄り道';
@@ -2337,8 +2444,8 @@ function showArrivalModal(w, onClose){
         <div class="stamp ${stampCls}">${stampText}</div>
         ${illustrationHTML}
         <h3>${title}</h3>
-        <p class="quote">${quote}</p>
-        <p class="note">${isBranchStarted ? '※明日以降、サイコロを振ると寄り道の続きを進みます。' : isBranch ? '※明日以降、サイコロを振ると分岐点への帰り道を進みます。' : isSpecial ? '※このマスの効果で移動しました。' : '※このメッセージは仮の文言です。後日差し替え予定です。'}</p>
+        ${quote ? `<p class="quote">${quote}</p>` : ''}
+        ${(()=>{ const n = isBranchStarted ? '※明日以降、サイコロを振ると寄り道の続きを進みます。' : isBranch ? '※明日以降、サイコロを振ると分岐点への帰り道を進みます。' : isSpecial ? '' : '※このメッセージは仮の文言です。後日差し替え予定です。'; return n ? `<p class="note">${n}</p>` : ''; })()}
         <button class="btn btn-main" id="closeModalBtn">閉じる</button>
       </div>
     `;
@@ -2366,10 +2473,19 @@ if(API_URL === 'YOUR_APPS_SCRIPT_URL_HERE'){
         コードの中の <code>const API_URL = 'YOUR_APPS_SCRIPT_URL_HERE';</code> の部分に、デプロイしたApps ScriptのウェブアプリURLを貼り付けてください。</p>
       </div>
     </div>`;
-} else if(AUTO_LOGIN_TEST){
-  join(AUTO_LOGIN_NICKNAME, AUTO_LOGIN_PASSWORD);
 } else {
-  tryAutoLoginFromStorage();
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('invite');
+  const isAdmin = urlParams.get('admin') === 'invite';
+  if(isAdmin){
+    renderAdminInviteScreen();
+  } else if(inviteToken){
+    renderInviteJoinScreen(inviteToken);
+  } else if(AUTO_LOGIN_TEST){
+    join(AUTO_LOGIN_NICKNAME, AUTO_LOGIN_PASSWORD);
+  } else {
+    tryAutoLoginFromStorage();
+  }
 }
 </script>
 </body>
