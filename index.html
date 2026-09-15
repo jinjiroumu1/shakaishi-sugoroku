@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v090412</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091402</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1304,6 +1304,10 @@ async function apiJoin(nickname, passwordHash){
   try{ return await apiCall('join', {nickname, passwordHash}); }
   catch(e){ return {ok:false, error:'network'}; }
 }
+async function apiSaveProfile(nickname, passwordHash, realName, email){
+  try{ return await apiCall('saveProfile', {nickname, passwordHash, realName, email}); }
+  catch(e){ return {ok:false, error:'network'}; }
+}
 async function apiSave(p){
   try{
     const trimmedHistory = (p.history||[]).slice(-50); // URLが長くなりすぎないよう直近50件に絞る
@@ -1428,22 +1432,40 @@ function renderJoin(){
     <div class="wrap">
       <div class="join-screen">
         <h1>社労士日光街道すごろく</h1>
-        <p>日本橋から日光まで、宿場と寄り道をめぐる長丁場のすごろくです。<br><b>初めての方</b>は、ニックネームと一緒に、これから使う<b>合言葉（パスワード）を自由に決めて</b>入力してください。それが新規登録になります。<br><b>2回目以降</b>は、同じニックネームと、最初に決めた合言葉を入力してください。</p>
-        <input id="nickInput" type="text" placeholder="ニックネーム（例：やはぎ）" maxlength="20">
-        <input id="passInput" type="password" placeholder="合言葉（初めての方はここで自由に決めてください）" maxlength="40">
+        <p>日本橋から日光まで、宿場と寄り道をめぐる長丁場のすごろくです。<br>すでにご登録済みの方は、ニックネームと合言葉を入力してください。</p>
+        <input id="nickInput" type="text" placeholder="ニックネーム" maxlength="20">
+        <input id="passInput" type="password" placeholder="合言葉" maxlength="40">
         <div class="err" id="joinErr"></div>
         <button class="btn btn-main" style="width:100%" id="joinBtn">参加する / つづきから</button>
         <div class="warn-box">
-          🔒 同じニックネームで記録を続けるには、最初に決めた合言葉（パスワード）が必要です。他のサービスと同じ合言葉は避けてください。忘れると別ニックネームでの再登録が必要になります。
+          🔒 同じニックネームで記録を続けるには、最初に決めた合言葉（パスワード）が必要です。
         </div>
+        <button class="btn btn-ghost" style="width:100%; margin-top:14px;" id="newRegisterBtn">はじめての方はこちら（新規登録）</button>
       </div>
     </div>
   `;
   const doJoin = ()=> join(document.getElementById('nickInput').value.trim(), document.getElementById('passInput').value);
   document.getElementById('joinBtn').onclick = doJoin;
   document.getElementById('passInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doJoin(); });
+  document.getElementById('newRegisterBtn').onclick = showNewUserRedirectModal;
 }
 
+const INQUIRY_EMAIL = 'info@jinji-roumu.com';
+function showNewUserRedirectModal(){
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <div class="stamp side">🎲</div>
+      <h3>現在、プレイヤーが満員の状態です</h3>
+      <p class="quote">社労士すごろくについてのお問い合わせは、下のボタンからお願いいたします。</p>
+      <a href="mailto:${INQUIRY_EMAIL}" class="btn btn-main" style="display:block; text-decoration:none;">お問い合わせする（${INQUIRY_EMAIL}）</a>
+      <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="closeNewUserModalBtn">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('closeNewUserModalBtn').onclick = ()=> div.remove();
+}
 async function join(nickname, password){
   const errEl = document.getElementById('joinErr');
   if(!nickname){ if(errEl) errEl.textContent = 'ニックネームを入力してください'; return; }
@@ -1455,6 +1477,10 @@ async function join(nickname, password){
   if(!r || !r.ok){
     renderJoin();
     document.getElementById('nickInput').value = nickname;
+    if(r && r.error==='new_user'){
+      showNewUserRedirectModal();
+      return;
+    }
     document.getElementById('joinErr').textContent =
       (r && r.error==='bad_password') ? 'そのニックネームは、すでに他の方が使っている可能性があります。合言葉が違う場合はもう一度入力するか、別のニックネームをお試しください。' :
       (r && r.error==='network') ? '通信に失敗しました。時間をおいて再度お試しください。' :
@@ -1469,11 +1495,53 @@ async function join(nickname, password){
 async function finishLogin(nickname, hash, player){
   ME = nickname;
   PLAYER = Object.assign({}, player, {passwordHash: hash});
+  if(!PLAYER.realName || !PLAYER.email){
+    renderProfileRequiredScreen();
+    return;
+  }
   MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0; // ログイン時は全体表示から
   await refreshAll();
   checkNewMessagesPopup();
   checkNewCheersPopup();
   renderGame();
+}
+
+// 本名・メールアドレスが未登録の場合、ここで必ず登録してもらう（本人確認・今後の連絡用）
+function renderProfileRequiredScreen(){
+  app.innerHTML = `
+    <div class="wrap">
+      <div class="join-screen">
+        <h1>ご登録のお願い</h1>
+        <p>本人確認・今後のご連絡のため、<b>お名前とメールアドレス</b>のご登録をお願いいたします（すごろくを続けるには必須です）。<br>ご登録いただくまでの間、盤面上のコマは非表示になります。ご登録後、今までの位置からすぐに再開できます。</p>
+        <input id="realNameInput" type="text" placeholder="お名前（例：矢萩 大輔）" maxlength="40">
+        <input id="emailInput" type="email" placeholder="メールアドレス" maxlength="100">
+        <div class="err" id="profileErr"></div>
+        <button class="btn btn-main" style="width:100%" id="profileSubmitBtn">登録してすごろくへ進む</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('profileSubmitBtn').onclick = async ()=>{
+    const errEl = document.getElementById('profileErr');
+    const realName = document.getElementById('realNameInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+    if(!realName){ errEl.textContent = 'お名前を入力してください'; return; }
+    if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ errEl.textContent = '正しいメールアドレスを入力してください'; return; }
+    errEl.textContent = '';
+    document.getElementById('profileSubmitBtn').disabled = true;
+    const r = await apiSaveProfile(PLAYER.nickname, PLAYER.passwordHash, realName, email);
+    if(!r || !r.ok){
+      errEl.textContent = '登録に失敗しました。時間をおいて再度お試しください。';
+      document.getElementById('profileSubmitBtn').disabled = false;
+      return;
+    }
+    PLAYER.realName = realName;
+    PLAYER.email = email;
+    MAP_SCALE = 1; MAP_PAN_X = 0; MAP_PAN_Y = 0;
+    await refreshAll();
+    checkNewMessagesPopup();
+    checkNewCheersPopup();
+    renderGame();
+  };
 }
 
 // 同じPC・ブラウザなら次回から自動でログインできるよう、ニックネームとパスワードのハッシュを保存する
