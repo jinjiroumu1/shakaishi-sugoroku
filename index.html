@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091402</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091404</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1296,7 +1296,16 @@ function jsonpCall(params){
   });
 }
 async function apiCall(action, payload){
-  return jsonpCall(Object.assign({action}, payload));
+  const params = Object.assign({action}, payload);
+  for(let attempt=0; attempt<3; attempt++){
+    const r = await jsonpCall(params);
+    // 通信失敗・タイムアウトの時だけ自動で再試行（データの中身が返ってきていれば、それ以上は試さない）
+    if(r && (r.error==='network' || r.error==='timeout') && attempt<2){
+      await new Promise(res=>setTimeout(res, 1200 + attempt*1500));
+      continue;
+    }
+    return r;
+  }
 }
 
 // nickname+passwordHashで参加登録／ログイン。失敗時は {ok:false, error:'bad_password'}
@@ -1459,7 +1468,7 @@ function showNewUserRedirectModal(){
       <div class="stamp side">🎲</div>
       <h3>現在、プレイヤーが満員の状態です</h3>
       <p class="quote">社労士すごろくについてのお問い合わせは、下のボタンからお願いいたします。</p>
-      <a href="mailto:${INQUIRY_EMAIL}" class="btn btn-main" style="display:block; text-decoration:none;">お問い合わせする（${INQUIRY_EMAIL}）</a>
+      <a href="mailto:${INQUIRY_EMAIL}" class="btn btn-main" style="display:block; text-decoration:none;">お問い合わせする</a>
       <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="closeNewUserModalBtn">閉じる</button>
     </div>
   `;
@@ -1513,7 +1522,7 @@ function renderProfileRequiredScreen(){
       <div class="join-screen">
         <h1>ご登録のお願い</h1>
         <p>本人確認・今後のご連絡のため、<b>お名前とメールアドレス</b>のご登録をお願いいたします（すごろくを続けるには必須です）。<br>ご登録いただくまでの間、盤面上のコマは非表示になります。ご登録後、今までの位置からすぐに再開できます。</p>
-        <input id="realNameInput" type="text" placeholder="お名前（例：矢萩 大輔）" maxlength="40">
+        <input id="realNameInput" type="text" placeholder="お名前（例：畑中義雄）" maxlength="40">
         <input id="emailInput" type="email" placeholder="メールアドレス" maxlength="100">
         <div class="err" id="profileErr"></div>
         <button class="btn btn-main" style="width:100%" id="profileSubmitBtn">登録してすごろくへ進む</button>
