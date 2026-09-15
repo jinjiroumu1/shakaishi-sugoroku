@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091507</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091509</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1017,7 +1017,7 @@ function showBranchInfoModal(key){
   if(closeBtn) closeBtn.onclick = ()=> div.remove();
 }
 
-const TEST_STATION_MESSAGE_PREVIEW = true; // テスト環境用：未到達の宿場も先生メッセージを確認できる
+const TEST_STATION_MESSAGE_PREVIEW = false; // 到達済みの宿場のみ先生メッセージを表示（本番と同じ挙動）
 function showStationInfoModal(i){
   const n = MAP_NODES[i];
   if(!n) return;
@@ -1339,10 +1339,15 @@ async function apiSave(p){
     });
   }catch(e){ return {ok:false, error:'network'}; }
 }
+let RESET_SCHEDULED_FOR = null; // 5人ゴールで予約されたリセット予定日（あれば）
 async function loadAllPlayers(){
   try{
     const r = await apiCall('list', {});
-    return (r && r.ok) ? r.players : [];
+    if(r && r.ok){
+      RESET_SCHEDULED_FOR = r.resetScheduledFor || null;
+      return r.players;
+    }
+    return [];
   }catch(e){ return []; }
 }
 
@@ -1735,6 +1740,11 @@ function renderGame(){
     <button class="dice-float-btn" id="mapResetBtnFloat" style="background:linear-gradient(180deg, var(--indigo-700), var(--indigo-900));">🗺 全体表示</button>
   </div>
   <div class="wrap">
+    ${RESET_SCHEDULED_FOR ? `
+    <div class="panel" style="background:rgba(199,154,62,0.18); border:1px solid rgba(199,154,62,0.5); text-align:center; padding:14px;">
+      🎉 <b>ゴール5名達成！今回のゲームはまもなく終了します。</b><br>
+      <span style="font-size:0.9rem;">${RESET_SCHEDULED_FOR.replace(/-/g,'/')} から、全員スタート地点に戻って新しいゲームが始まります。お名前・メールのご登録や、掲示板・メッセージはそのまま引き継がれます。</span>
+    </div>` : ''}
     <div class="hero">
       <div class="hero-main">
         <div class="hero-eyebrow">社労士業界初！サムライコイン争奪</div>
