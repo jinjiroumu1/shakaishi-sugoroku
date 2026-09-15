@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091509</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091510</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1155,6 +1155,16 @@ function nowLocalStr(){
   const p2 = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
 }
+// サーバーに保存されているUTC形式のタイムスタンプ（例: "2026-09-15T08:30:00.000Z"）を、
+// 日本時間の "YYYY-MM-DD HH:MM" 形式に変換して表示するための関数
+function toJstDisplay(isoTimestamp){
+  if(!isoTimestamp) return '';
+  const d = new Date(isoTimestamp);
+  if(isNaN(d.getTime())) return isoTimestamp.slice(0,16).replace('T',' '); // 万一パースできない場合はそのまま
+  const p2 = n => String(n).padStart(2,'0');
+  const jstStr = d.toLocaleString('sv-SE', {timeZone:'Asia/Tokyo'}); // 'YYYY-MM-DD HH:MM:SS' 形式で日本時間が取れる
+  return jstStr.slice(0,16);
+}
 function usedBonusToday(type){
   if(!PLAYER || !PLAYER.history) return false;
   const t = todayStr();
@@ -1295,12 +1305,18 @@ function jsonpCall(params){
     document.body.appendChild(script);
   });
 }
+// 自動リトライしても安全な処理（読み取り専用）だけを対象にする。
+// 書き込み系（sendMessage等）は、タイムアウト時にサーバー側で処理が完了している可能性があるため、
+// 自動で再送信すると重複してしまう。よって書き込み系はリトライしない。
+const RETRYABLE_ACTIONS = ['list', 'listBoard', 'listMessages', 'listCheers', 'checkInvite'];
 async function apiCall(action, payload){
   const params = Object.assign({action}, payload);
-  for(let attempt=0; attempt<3; attempt++){
+  const retryable = RETRYABLE_ACTIONS.indexOf(action) !== -1;
+  const maxAttempts = retryable ? 3 : 1;
+  for(let attempt=0; attempt<maxAttempts; attempt++){
     const r = await jsonpCall(params);
     // 通信失敗・タイムアウトの時だけ自動で再試行（データの中身が返ってきていれば、それ以上は試さない）
-    if(r && (r.error==='network' || r.error==='timeout') && attempt<2){
+    if(retryable && r && (r.error==='network' || r.error==='timeout') && attempt<maxAttempts-1){
       await new Promise(res=>setTimeout(res, 1200 + attempt*1500));
       continue;
     }
@@ -1858,7 +1874,7 @@ function renderGame(){
           <div class="board-item">
             <div class="board-item-head">
               <span class="board-type-tag ${p.type==='client'?'client':'hokkori'}">${p.type==='client' ? '🤝 共創スタート' : '☕ ほっこり'}</span>
-              <span class="board-date">${(p.timestamp||'').slice(0,16).replace('T',' ')}</span>
+              <span class="board-date">${toJstDisplay(p.timestamp)}</span>
             </div>
             <div class="board-text">${escapeHtml(p.text)}</div>
             <div class="board-nick">— ${escapeHtml(p.nickname)}</div>
@@ -1897,7 +1913,7 @@ function renderGame(){
             ${ALL_MESSAGES.filter(m=>(m.from===ME && m.to===MSG_PARTNER) || (m.from===MSG_PARTNER && m.to===ME)).map(m=>`
               <div class="msg-bubble ${m.from===ME?'mine':'theirs'}">
                 <div class="msg-bubble-text">${escapeHtml(m.text)}</div>
-                <div class="msg-bubble-time">${(m.timestamp||'').slice(0,16).replace('T',' ')}</div>
+                <div class="msg-bubble-time">${toJstDisplay(m.timestamp)}</div>
               </div>
             `).join('') || '<div class="board-empty">まだメッセージがありません。</div>'}
           </div>
@@ -1918,7 +1934,7 @@ function renderGame(){
             <tr class="${p.nickname===ME?'me':''}">
               <td><span class="medal">${medal(i)}</span></td>
               <td>${escapeHtml(p.nickname)}</td>
-              <td>${p.position>=GOAL_POS ? '🏁 ゴール' + (p.arrivedAt ? '（'+p.arrivedAt.slice(0,10)+'）' : '') : locationLabel(p.position)}</td>
+              <td>${p.position>=GOAL_POS ? '🏁 ゴール' + (p.arrivedAt ? '（'+toJstDisplay(p.arrivedAt).slice(0,10)+'）' : '') : locationLabel(p.position)}</td>
             </tr>
           `).join('')}
         </tbody>
