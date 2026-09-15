@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091501</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091502</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1321,8 +1321,8 @@ async function apiCheckInvite(token){
   try{ return await apiCall('checkInvite', {token}); }
   catch(e){ return {ok:false, error:'network'}; }
 }
-async function apiJoinWithInvite(token, nickname, passwordHash){
-  try{ return await apiCall('joinWithInvite', {token, nickname, passwordHash}); }
+async function apiJoinWithInvite(token, nickname, passwordHash, realName, email){
+  try{ return await apiCall('joinWithInvite', {token, nickname, passwordHash, realName, email}); }
   catch(e){ return {ok:false, error:'network'}; }
 }
 async function apiSaveProfile(nickname, passwordHash, realName, email){
@@ -1520,9 +1520,11 @@ function renderInviteJoinScreen(token){
       <div class="wrap">
         <div class="join-screen">
           <h1>新規登録</h1>
-          <p>ニックネームと、これから使う合言葉（パスワード）を自由に決めて入力してください。</p>
+          <p>ニックネーム・合言葉（パスワード）を自由に決めて入力し、あわせてお名前・メールアドレス（本人確認・今後の連絡用、必須）もご入力ください。</p>
           <input id="nickInput" type="text" placeholder="ニックネーム" maxlength="20">
           <input id="passInput" type="password" placeholder="合言葉（自由に決めてください）" maxlength="40">
+          <input id="realNameInput" type="text" placeholder="お名前（例：畑中義雄）" maxlength="40">
+          <input id="emailInput" type="email" placeholder="メールアドレス" maxlength="100">
           <div class="err" id="joinErr"></div>
           <button class="btn btn-main" style="width:100%" id="inviteJoinBtn">登録する</button>
         </div>
@@ -1532,12 +1534,16 @@ function renderInviteJoinScreen(token){
       const errEl = document.getElementById('joinErr');
       const nickname = document.getElementById('nickInput').value.trim();
       const password = document.getElementById('passInput').value;
+      const realName = document.getElementById('realNameInput').value.trim();
+      const email = document.getElementById('emailInput').value.trim();
       if(!nickname){ errEl.textContent = 'ニックネームを入力してください'; return; }
       if(!password){ errEl.textContent = '合言葉を入力してください'; return; }
+      if(!realName){ errEl.textContent = 'お名前を入力してください'; return; }
+      if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ errEl.textContent = '正しいメールアドレスを入力してください'; return; }
       errEl.textContent = '';
       document.getElementById('inviteJoinBtn').disabled = true;
       const hash = await sha256Hex(password);
-      const jr = await apiJoinWithInvite(token, nickname, hash);
+      const jr = await apiJoinWithInvite(token, nickname, hash, realName, email);
       if(!jr || !jr.ok){
         document.getElementById('inviteJoinBtn').disabled = false;
         errEl.textContent =
