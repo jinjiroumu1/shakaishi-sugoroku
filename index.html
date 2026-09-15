@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091510</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091511</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -977,7 +977,7 @@ function buildStationMessageInnerHTML(stationName, icon, msg, extraNoteHTML){
     ? `<img class="msg-photo" src="${msg.image}" />`
     : `<div class="msg-photo msg-photo-placeholder">🧑‍💼</div>`;
   const quoteHTML = (msg.lines && msg.lines.length)
-    ? `<p class="msg-quote">${msg.lines.map(l=>`「${escapeHtml(l)}」`).join('<br>')}</p>`
+    ? `<p class="msg-quote">${msg.lines.map(l=>escapeHtml(l)).join('<br><br>')}</p>`
     : `<p class="msg-quote msg-quote-pending">（メッセージは準備中です）</p>`;
   return `
     <div class="msg-header">
