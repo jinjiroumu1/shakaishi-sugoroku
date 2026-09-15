@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>社労士日光街道すごろく</title>
+<title>みんなで遊ぼう！社労士日光街道すごろく</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091502</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091504</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1523,6 +1523,9 @@ function renderInviteJoinScreen(token){
           <p>ニックネーム・合言葉（パスワード）を自由に決めて入力し、あわせてお名前・メールアドレス（本人確認・今後の連絡用、必須）もご入力ください。</p>
           <input id="nickInput" type="text" placeholder="ニックネーム" maxlength="20">
           <input id="passInput" type="password" placeholder="合言葉（自由に決めてください）" maxlength="40">
+          <div class="warn-box">
+            🔒 次回以降も、同じニックネームと合言葉でログインします。忘れると続きから再開できなくなるので、必ず控えておいてください。
+          </div>
           <input id="realNameInput" type="text" placeholder="お名前（例：畑中義雄）" maxlength="40">
           <input id="emailInput" type="email" placeholder="メールアドレス" maxlength="100">
           <div class="err" id="joinErr"></div>
@@ -1732,7 +1735,10 @@ function renderGame(){
       <div class="hero-main">
         <div class="hero-eyebrow">社労士業界初！サムライコイン争奪</div>
         <h1>社労士<span>日光街道</span>すごろく</h1>
-        <p class="sub">日本橋 → 21の宿場（全${GOAL_POS}マス）→ 日光東照宮。毎日1回のサイコロで、約3か月のゴールを目指します。</p>
+        <p class="sub">日光街道の宿場町をすごろくで進みながら仲間の社労士と共通体験を重ねていきます。宿場町につけば、いろんな社労士が熱いメッセージを贈ってくれます。<br>
+実際の社労士生活で嬉しいことがあった時は、コメントで共有し、みんなと喜びを分かち合いましょう。<br>
+バーチャルなすごろくの中に少しだけ実際の日常がまぎれこむ社労士仲間のほっこりすごろくです。<br>
+みんなでゴールの日光を目指しましょう！</p>
         <div class="period">
           <span class="chip">開始 <b>2026/09/04</b></span>
           <span class="chip">第1期終了 <b>2027/03/31</b></span>
@@ -1755,14 +1761,6 @@ function renderGame(){
       </div>
     </div>
 
-    <section class="panel">
-      <h2 class="panel-title">みんなで遊ぼう！社労士日光街道すごろく</h2>
-      <p class="panel-desc">日光街道の宿場町をすごろくで進みながら仲間の社労士と共通体験を重ねていきます。宿場町につけば、いろんな社労士が熱いメッセージを贈ってくれます。<br>
-実際の社労士生活で嬉しいことがあった時は、コメントで共有し、みんなと喜びを分かち合いましょう。<br>
-バーチャルなすごろくの中に少しだけ実際の日常がまぎれこむ社労士仲間のほっこりすごろくです。<br>
-みんなでゴールの日光を目指しましょう！</p>
-    </section>
-
     ${phase==='before' ? `
     <section class="panel">
       <h2 class="panel-title">まだ開始前です</h2>
@@ -1771,7 +1769,6 @@ function renderGame(){
 
     ${phase!=='before' ? `
     <section class="panel">
-      <h2 class="panel-title">サイコロ ${phase==='after' ? '<span class="tag">終了</span>' : ''}</h2>
       <div class="panel-desc" style="background:rgba(199,154,62,0.12); border:1px solid rgba(199,154,62,0.4); border-radius:10px; padding:12px 16px; margin-bottom:14px;">
         <b>遊び方ルール</b><br>
         ・1日1回サイコロふれます。<br>
@@ -1783,7 +1780,6 @@ function renderGame(){
         ・1か月間稼働しないプレーヤーは他の参加希望者のために卒業とします。<br>
         ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的に参加ください！
       </div>
-      <p class="panel-desc">1日1回、サイコロを振って先へ進めます。街道の途中には「近道」「後退」のマスもあります。該当することがあれば、ボーナスもその場で申告できます。</p>
       <div class="dice-3col">
         <div class="dice-col">
           <div class="dice-col-label">本日のサイコロ</div>
