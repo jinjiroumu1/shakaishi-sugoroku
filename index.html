@@ -294,7 +294,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091504</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091507</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1593,6 +1593,10 @@ async function join(nickname, password){
       showNewUserRedirectModal();
       return;
     }
+    if(r && r.error==='graduated'){
+      document.getElementById('joinErr').textContent = 'このアカウントは、1か月以上サイコロを振っていないため卒業扱いとなりました。ご参加をご希望の場合は、info@jinji-roumu.com までお問い合わせください。';
+      return;
+    }
     document.getElementById('joinErr').textContent =
       (r && r.error==='bad_password') ? 'そのニックネームは、すでに他の方が使っている可能性があります。合言葉が違う場合はもう一度入力するか、別のニックネームをお試しください。' :
       (r && r.error==='network') ? '通信に失敗しました。時間をおいて再度お試しください。' :
@@ -1683,10 +1687,10 @@ async function tryAutoLoginFromStorage(){
 async function refreshAll(){
   // 盤面・ランキング表示用の簡易一覧（nickname/position/arrivedAtのみ）を取得。
   // 自分自身の詳細な状態（PLAYER）はローカルの値をそのまま使う。
-  ALL_PLAYERS = await loadAllPlayers();
-  BOARD_POSTS = await loadBoard();
-  ALL_MESSAGES = await loadMessages();
-  ALL_CHEERS = await loadCheers();
+  // 4つとも独立した読み取りなので、順番に待たず並行して取得する（体感速度が大きく変わる）
+  [ALL_PLAYERS, BOARD_POSTS, ALL_MESSAGES, ALL_CHEERS] = await Promise.all([
+    loadAllPlayers(), loadBoard(), loadMessages(), loadCheers()
+  ]);
 }
 // テスト中はtrueにしておくと、開始日(9/4)前でもサイコロを振れます。
 // 本番開始前にfalseに戻し、スプレッドシートのテストデータも削除してください。
@@ -1734,7 +1738,7 @@ function renderGame(){
     <div class="hero">
       <div class="hero-main">
         <div class="hero-eyebrow">社労士業界初！サムライコイン争奪</div>
-        <h1>社労士<span>日光街道</span>すごろく</h1>
+        <h1>みんなで遊ぼう！社労士<span>日光街道</span>すごろく</h1>
         <p class="sub">日光街道の宿場町をすごろくで進みながら仲間の社労士と共通体験を重ねていきます。宿場町につけば、いろんな社労士が熱いメッセージを贈ってくれます。<br>
 実際の社労士生活で嬉しいことがあった時は、コメントで共有し、みんなと喜びを分かち合いましょう。<br>
 バーチャルなすごろくの中に少しだけ実際の日常がまぎれこむ社労士仲間のほっこりすごろくです。<br>
@@ -1771,14 +1775,14 @@ function renderGame(){
     <section class="panel">
       <div class="panel-desc" style="background:rgba(199,154,62,0.12); border:1px solid rgba(199,154,62,0.4); border-radius:10px; padding:12px 16px; margin-bottom:14px;">
         <b>遊び方ルール</b><br>
-        ・1日1回サイコロふれます。<br>
-        ・実際の社労士生活でうれしいことがあれば、みんなに共有。追加でもう1回サイコロがふれます。<br>
-        ・仲間を応援したり、祝福できます。応援された人は1回サイコロふれます。<br>
-        ・宿場町までついたら、先輩社労士からのメッセージがみれます。<br>
+        ・1日1回サイコロ振れます。<br>
+        ・実際の社労士生活でうれしいことがあれば、みんなに共有。追加でもう1回サイコロが振れます。<br>
+        ・仲間を応援したり、祝福できます。応援された人は1回サイコロ振れます。<br>
+        ・宿場町までついたら、先輩社労士からのメッセージが見られます。<br>
         ・参加人数は、最大20名です。5名がゴールしたら、そのゲームは終了します（新たなゲームに引き続き参加できます）<br>
         ・ゴールした5名にはお祝いとして、サムライコインを進呈します（変更する場合あり）<br>
         ・1か月間稼働しないプレーヤーは他の参加希望者のために卒業とします。<br>
-        ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的に参加ください！
+        ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的にご参加ください！
       </div>
       <div class="dice-3col">
         <div class="dice-col">
