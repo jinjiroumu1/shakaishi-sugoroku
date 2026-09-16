@@ -300,7 +300,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091604</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091605</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -2061,10 +2061,11 @@ function renderGame(){
       if(target) target.classList.toggle('collapsed');
     };
   });
-  // 初めてのログインの時だけ、自動で紙芝居を始める
+  // 初めてのログインの時、または ?tour=1 が付いている時は、自動で紙芝居を始める
   try{
     const seenKey = 'sugoroku_tour_seen_' + ME;
-    if(!localStorage.getItem(seenKey)){
+    const forceTour = new URLSearchParams(window.location.search).get('tour') === '1';
+    if(forceTour || !localStorage.getItem(seenKey)){
       localStorage.setItem(seenKey, '1');
       setTimeout(()=> startTour(), 400);
     }
