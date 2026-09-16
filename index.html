@@ -301,7 +301,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091608</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091609</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -890,7 +890,7 @@ function buildMapStaticSVG(){
     const borderColor = isStart ? 'var(--vermillion)' : '#8a5a2b';
     const borderW = isStart ? 12 : 9;
     banners += `
-      <g class="map-node" onclick="showStationInfoModal(${i})" style="cursor:pointer;">
+      <g class="map-node" ${n.stationOrder===0 ? 'id="tourFirstStation"' : ''} onclick="showStationInfoModal(${i})" style="cursor:pointer;">
         <rect x="${(bx-pw/2-24).toFixed(1)}" y="${(by-ph/2-24).toFixed(1)}" width="${pw+48}" height="${ph+48}" rx="34" fill="#fff8ee" opacity="0.75"/>
         <rect x="${(bx-pw/2-10).toFixed(1)}" y="${(by-ph/2-10).toFixed(1)}" width="${pw+20}" height="${ph+20}" rx="28" fill="none" stroke="${borderColor}" stroke-width="${borderW}"/>
         <defs><clipPath id="${clipId}"><rect x="${(bx-pw/2).toFixed(1)}" y="${(by-ph/2).toFixed(1)}" width="${pw}" height="${ph}" rx="20"/></clipPath></defs>
@@ -1648,6 +1648,15 @@ async function finishLogin(nickname, hash, player){
   checkNewMessagesPopup();
   checkNewCheersPopup();
   renderGame();
+  // 初めてのログインの時、または ?tour=1 が付いている時は、自動で紙芝居を始める（ログイン時に1回だけ）
+  try{
+    const seenKey = 'sugoroku_tour_seen_' + ME;
+    const forceTour = new URLSearchParams(window.location.search).get('tour') === '1';
+    if(forceTour || !localStorage.getItem(seenKey)){
+      localStorage.setItem(seenKey, '1');
+      setTimeout(()=> startTour(), 400);
+    }
+  }catch(e){}
 }
 
 // 本名・メールアドレスが未登録の場合、ここで必ず登録してもらう（本人確認・今後の連絡用）
@@ -1760,7 +1769,7 @@ const TOUR_STEPS = [
   {id:'tourClientBonusCol', text:'実際のお仕事で嬉しいことがあったら、ここから報告できます。追加でもう1回サイコロが振れます'},
   {id:'tourHokkoriBonusCol',text:'ちょっとした嬉しい出来事も、ここで共有できます'},
   {id:'tourCheerBonusCol',  text:'仲間の投稿に応援を送れます。応援された人は、ボーナスサイコロがもらえます'},
-  {id:'tourMapSection',     text:'宿場に着くと、先輩社労士からのメッセージが読めます'},
+  {id:'tourFirstStation',   text:'宿場に着くと、先輩社労士からのメッセージが読めます', resetMap:true},
   {id:'tourGoalPanel',      text:'ここが最終目的地、日光東照宮です。たどり着くとお祝いのメッセージが届きます！', resetMap:true, includeToken:true},
   {id:'messagesPanel',      text:'個別に、仲間とメッセージのやり取りもできます'},
 ];
@@ -2083,15 +2092,6 @@ function renderGame(){
       document.getElementById('closeInfoModalBtn').onclick = ()=> div.remove();
     };
   });
-  // 初めてのログインの時、または ?tour=1 が付いている時は、自動で紙芝居を始める
-  try{
-    const seenKey = 'sugoroku_tour_seen_' + ME;
-    const forceTour = new URLSearchParams(window.location.search).get('tour') === '1';
-    if(forceTour || !localStorage.getItem(seenKey)){
-      localStorage.setItem(seenKey, '1');
-      setTimeout(()=> startTour(), 400);
-    }
-  }catch(e){}
   const msgPartnerSelect = document.getElementById('msgPartnerSelect');
   if(msgPartnerSelect) msgPartnerSelect.onchange = (e)=>{ MSG_PARTNER = e.target.value || null; renderGame(); };
   const msgSendBtn = document.getElementById('msgSendBtn');
