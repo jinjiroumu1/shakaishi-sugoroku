@@ -168,8 +168,8 @@
   .medal{font-size:0.9rem;}
 
   .modal-backdrop{position:fixed; inset:0; background:rgba(16,20,30,0.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; opacity:1; transition: opacity 0.28s ease;}
-  #tourOverlay{position:fixed; inset:0; z-index:80; background:rgba(16,20,30,0.62); pointer-events:auto;}
-  #tourHighlight{position:fixed; border-radius:14px; box-shadow:0 0 0 4px var(--gold), 0 0 0 9999px rgba(16,20,30,0.62); transition: all 0.28s ease; pointer-events:none;}
+  #tourOverlay{position:fixed; inset:0; z-index:80; pointer-events:auto;}
+  #tourHighlight{position:fixed; border-radius:14px; box-shadow:0 0 0 4px var(--gold), 0 0 8px 2px rgba(199,154,62,0.5), 0 0 0 9999px rgba(16,20,30,0.68); transition: all 0.28s ease; pointer-events:none; background:transparent;}
   #tourCaption{position:fixed; max-width:300px; background:#fffaf0; border-radius:14px; padding:14px 16px; box-shadow:0 20px 50px -15px rgba(0,0,0,0.5); z-index:81; transition: all 0.28s ease;}
   #tourCaptionText{margin:0; font-size:0.92rem; line-height:1.6; color:var(--indigo-900);}
   .modal-backdrop.fade-out{opacity:0;}
@@ -300,7 +300,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091601</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091604</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -944,7 +944,7 @@ function buildMapStaticSVG(){
   const gx = goalNode.x, gy = goalNode.y;
   const GW = 360, GH = 360;
   const goalPanel = `
-    <g class="map-node" onclick="showGoalInfoModal()" style="cursor:pointer;">
+    <g class="map-node" id="tourGoalPanel" onclick="showGoalInfoModal()" style="cursor:pointer;">
       <rect x="${(gx-GW/2-24).toFixed(1)}" y="${(gy-GH/2-24).toFixed(1)}" width="${GW+48}" height="${GH+48}" rx="40" fill="#fff8ee" opacity="0.75"/>
       <defs><clipPath id="clip_goal"><rect x="${(gx-GW/2).toFixed(1)}" y="${(gy-GH/2).toFixed(1)}" width="${GW}" height="${GH}" rx="28"/></clipPath></defs>
       <image href="${STATION_IMAGES.goal}" x="${(gx-GW/2).toFixed(1)}" y="${(gy-GH/2).toFixed(1)}" width="${GW}" height="${GH}" clip-path="url(#clip_goal)" preserveAspectRatio="xMidYMid slice"/>
@@ -1547,13 +1547,13 @@ function renderInviteJoinScreen(token){
       <div class="wrap">
         <div class="join-screen">
           <h1>新規登録</h1>
-          <p>ニックネーム・合言葉（パスワード）を自由に決めて入力し、あわせてお名前・メールアドレス（本人確認・今後の連絡用、必須）もご入力ください。</p>
+          <p>ニックネーム・合言葉（パスワード）を自由に決めて入力し、あわせてフルネーム・メールアドレス（本人確認・今後の連絡用、必須）もご入力ください。</p>
           <input id="nickInput" type="text" placeholder="ニックネーム" maxlength="20">
           <input id="passInput" type="password" placeholder="合言葉（自由に決めてください）" maxlength="40">
           <div class="warn-box">
             🔒 次回以降も、同じニックネームと合言葉でログインします。忘れると続きから再開できなくなるので、必ず控えておいてください。
           </div>
-          <input id="realNameInput" type="text" placeholder="お名前（例：畑中義雄）" maxlength="40">
+          <input id="realNameInput" type="text" placeholder="フルネーム（姓名）" maxlength="40">
           <input id="emailInput" type="email" placeholder="メールアドレス" maxlength="100">
           <div class="err" id="joinErr"></div>
           <button class="btn btn-main" style="width:100%" id="inviteJoinBtn">登録する</button>
@@ -1655,8 +1655,8 @@ function renderProfileRequiredScreen(){
     <div class="wrap">
       <div class="join-screen">
         <h1>ご登録のお願い</h1>
-        <p>本人確認・今後のご連絡のため、<b>お名前とメールアドレス</b>のご登録をお願いいたします（すごろくを続けるには必須です）。<br>ご登録いただくまでの間、盤面上のコマは非表示になります。ご登録後、今までの位置からすぐに再開できます。</p>
-        <input id="realNameInput" type="text" placeholder="お名前（例：畑中義雄）" maxlength="40">
+        <p>本人確認・今後のご連絡のため、<b>フルネーム（姓名）とメールアドレス</b>のご登録をお願いいたします（すごろくを続けるには必須です）。<br>ご登録いただくまでの間、盤面上のコマは非表示になります。ご登録後、今までの位置からすぐに再開できます。</p>
+        <input id="realNameInput" type="text" placeholder="フルネーム（姓名）" maxlength="40">
         <input id="emailInput" type="email" placeholder="メールアドレス" maxlength="100">
         <div class="err" id="profileErr"></div>
         <button class="btn btn-main" style="width:100%" id="profileSubmitBtn">登録してすごろくへ進む</button>
@@ -1744,14 +1744,40 @@ function locationLabel(position){
 }
 
 // 遊び方の紙芝居（スポットライト）
+const RULES_HTML = `
+  ・1日1回サイコロを振れます。<br>
+  ・実際の社労士生活でうれしいことがあれば、みんなに共有。追加でもう1回サイコロが振れます。<br>
+  ・仲間を応援したり、祝福できます。応援された人は1回サイコロを振れます。<br>
+  ・宿場町に着いたら、先輩社労士からのメッセージが見られます。<br>
+  ・参加人数は、最大20名です。5名がゴールしたら、そのゲームは終了します（新たなゲームに引き続き参加できます）。<br>
+  ・ゴールした5名にはお祝いとして、サムライコインを進呈します（変更する場合あり）。<br>
+  ・1か月間サイコロを振っていない人は、他の参加希望者のために卒業とします。<br>
+  ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的にご参加ください！
+`;
 const TOUR_STEPS = [
+  {rulesOnly:true,          text:''},
   {id:'tourDiceCol',        text:'ここを押すと、1日1回サイコロが振れます。街道を進みましょう！'},
   {id:'tourClientBonusCol', text:'実際のお仕事で嬉しいことがあったら、ここから報告できます。追加でもう1回サイコロが振れます'},
   {id:'tourHokkoriBonusCol',text:'ちょっとした嬉しい出来事も、ここで共有できます'},
   {id:'tourCheerBonusCol',  text:'仲間の投稿に応援を送れます。応援された人は、ボーナスサイコロがもらえます'},
   {id:'tourMapSection',     text:'宿場に着くと、先輩社労士からのメッセージが読めます'},
+  {id:'tourGoalPanel',      text:'ここが最終目的地、日光東照宮です。たどり着くとお祝いのメッセージが届きます！', resetMap:true},
   {id:'messagesPanel',      text:'個別に、仲間とメッセージのやり取りもできます'},
 ];
+function showRulesModal(){
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.innerHTML = `
+    <div class="modal-card">
+      <div class="stamp side">📖</div>
+      <h3>遊び方ルール</h3>
+      <p class="quote" style="text-align:left;">${RULES_HTML}</p>
+      <button class="btn btn-main" id="closeRulesModalBtn">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+  document.getElementById('closeRulesModalBtn').onclick = ()=> div.remove();
+}
 let TOUR_INDEX = 0;
 function startTour(){
   TOUR_INDEX = 0;
@@ -1781,10 +1807,25 @@ function endTour(){
 }
 function showTourStep(){
   const step = TOUR_STEPS[TOUR_INDEX];
-  const target = document.getElementById(step.id);
   const highlight = document.getElementById('tourHighlight');
   const caption = document.getElementById('tourCaption');
-  if(!target || !highlight || !caption){ TOUR_INDEX++; if(TOUR_INDEX<TOUR_STEPS.length) showTourStep(); else endTour(); return; }
+  if(!highlight || !caption) return;
+  if(step.rulesOnly){
+    highlight.style.width = '0px'; highlight.style.height = '0px';
+    highlight.style.top = '-9999px'; highlight.style.left = '-9999px';
+    caption.style.maxWidth = '480px';
+    caption.style.top = '50%'; caption.style.left = '50%';
+    caption.style.transform = 'translate(-50%,-50%)';
+    document.getElementById('tourCaptionText').innerHTML = `<b>📖 遊び方ルール</b><br><br>${RULES_HTML}`;
+    document.getElementById('tourStepCount').textContent = `${TOUR_INDEX+1} / ${TOUR_STEPS.length}`;
+    document.getElementById('tourNextBtn').textContent = '次へ';
+    return;
+  }
+  caption.style.maxWidth = '300px';
+  caption.style.transform = 'none';
+  const target = document.getElementById(step.id);
+  if(step.resetMap) resetMapView();
+  if(!target){ TOUR_INDEX++; if(TOUR_INDEX<TOUR_STEPS.length) showTourStep(); else endTour(); return; }
   target.scrollIntoView({behavior:'smooth', block:'center'});
   setTimeout(()=>{
     const r = target.getBoundingClientRect();
@@ -1867,17 +1908,6 @@ function renderGame(){
 
     ${phase!=='before' ? `
     <section class="panel">
-      <div class="panel-desc" style="background:rgba(199,154,62,0.12); border:1px solid rgba(199,154,62,0.4); border-radius:10px; padding:12px 16px; margin-bottom:14px;">
-        <b>遊び方ルール</b><br>
-        ・1日1回サイコロ振れます。<br>
-        ・実際の社労士生活でうれしいことがあれば、みんなに共有。追加でもう1回サイコロが振れます。<br>
-        ・仲間を応援したり、祝福できます。応援された人は1回サイコロ振れます。<br>
-        ・宿場町までついたら、先輩社労士からのメッセージが見られます。<br>
-        ・参加人数は、最大20名です。5名がゴールしたら、そのゲームは終了します（新たなゲームに引き続き参加できます）<br>
-        ・ゴールした5名にはお祝いとして、サムライコインを進呈します（変更する場合あり）<br>
-        ・1か月間稼働しないプレーヤーは他の参加希望者のために卒業とします。<br>
-        ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的にご参加ください！
-      </div>
       <div class="dice-3col">
         <div class="dice-col" id="tourDiceCol">
           <div class="dice-col-label">本日のサイコロ</div>
@@ -2024,7 +2054,7 @@ function renderGame(){
   `;
 
   document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; clearLoginStorage(); renderJoin(); };
-  document.getElementById('howToPlayBtn').onclick = ()=> startTour();
+  document.getElementById('howToPlayBtn').onclick = ()=> showRulesModal();
   document.querySelectorAll('.info-toggle').forEach(el=>{
     el.onclick = ()=>{
       const target = document.getElementById(el.dataset.target);
