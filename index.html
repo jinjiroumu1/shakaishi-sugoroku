@@ -76,6 +76,7 @@
     background:var(--paper); border:1px solid var(--paper-line); border-radius:12px;
     padding:16px 14px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
   }
+  .dice-col > .btn{margin-top:auto;}
   .dice-col-label{font-size:0.85rem; font-weight:800; color:var(--indigo-900);}
   .dice-col-desc{font-size:0.72rem; color:#7c7360;}
   .dice-col-desc.collapsed{display:none;}
@@ -300,7 +301,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091607</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091608</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1755,13 +1756,12 @@ const RULES_HTML = `
   ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的にご参加ください！
 `;
 const TOUR_STEPS = [
-  {rulesOnly:true,          text:''},
   {id:'tourDiceCol',        text:'ここを押すと、1日1回サイコロが振れます。街道を進みましょう！'},
   {id:'tourClientBonusCol', text:'実際のお仕事で嬉しいことがあったら、ここから報告できます。追加でもう1回サイコロが振れます'},
   {id:'tourHokkoriBonusCol',text:'ちょっとした嬉しい出来事も、ここで共有できます'},
   {id:'tourCheerBonusCol',  text:'仲間の投稿に応援を送れます。応援された人は、ボーナスサイコロがもらえます'},
   {id:'tourMapSection',     text:'宿場に着くと、先輩社労士からのメッセージが読めます'},
-  {id:'tourGoalPanel',      text:'ここが最終目的地、日光東照宮です。たどり着くとお祝いのメッセージが届きます！', resetMap:true},
+  {id:'tourGoalPanel',      text:'ここが最終目的地、日光東照宮です。たどり着くとお祝いのメッセージが届きます！', resetMap:true, includeToken:true},
   {id:'messagesPanel',      text:'個別に、仲間とメッセージのやり取りもできます'},
 ];
 function showRulesModal(){
@@ -1828,7 +1828,16 @@ function showTourStep(){
   if(!target){ TOUR_INDEX++; if(TOUR_INDEX<TOUR_STEPS.length) showTourStep(); else endTour(); return; }
   target.scrollIntoView({behavior:'smooth', block:'center'});
   setTimeout(()=>{
-    const r = target.getBoundingClientRect();
+    let r = target.getBoundingClientRect();
+    if(step.includeToken){
+      const tokenEl = document.getElementById('myTokenGroup');
+      if(tokenEl){
+        const tr = tokenEl.getBoundingClientRect();
+        const left = Math.min(r.left, tr.left), top = Math.min(r.top, tr.top);
+        const right = Math.max(r.right, tr.right), bottom = Math.max(r.bottom, tr.bottom);
+        r = {left, top, right, bottom, width: right-left, height: bottom-top};
+      }
+    }
     const pad = 8;
     highlight.style.top = (r.top - pad) + 'px';
     highlight.style.left = (r.left - pad) + 'px';
@@ -1840,7 +1849,7 @@ function showTourStep(){
     document.getElementById('tourCaptionText').textContent = step.text;
     document.getElementById('tourStepCount').textContent = `${TOUR_INDEX+1} / ${TOUR_STEPS.length}`;
     document.getElementById('tourNextBtn').textContent = (TOUR_INDEX === TOUR_STEPS.length-1) ? '閉じる' : '次へ';
-  }, 260);
+  }, 500);
 }
 
 function renderGame(){
