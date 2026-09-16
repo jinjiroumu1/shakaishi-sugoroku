@@ -78,6 +78,8 @@
   }
   .dice-col-label{font-size:0.85rem; font-weight:800; color:var(--indigo-900);}
   .dice-col-desc{font-size:0.72rem; color:#7c7360;}
+  .dice-col-desc.collapsed{display:none;}
+  .info-toggle{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:rgba(199,154,62,0.25); color:var(--gold); font-size:0.7rem; font-weight:800; cursor:pointer; margin-left:4px; vertical-align:middle; user-select:none;}
   .dice-face{width:64px;height:64px;border-radius:14px; background:#fff8ee; border:2px solid var(--indigo-800); display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:900; color:var(--indigo-900); box-shadow:3px 3px 0 var(--gold);}
   .dice-face.rolling{animation:shake 0.5s ease;}
   @keyframes shake{0%,100%{transform:rotate(0);} 25%{transform:rotate(-14deg) scale(1.05);} 50%{transform:rotate(10deg) scale(0.96);} 75%{transform:rotate(-8deg) scale(1.03);}}
@@ -166,6 +168,10 @@
   .medal{font-size:0.9rem;}
 
   .modal-backdrop{position:fixed; inset:0; background:rgba(16,20,30,0.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; opacity:1; transition: opacity 0.28s ease;}
+  #tourOverlay{position:fixed; inset:0; z-index:80; background:rgba(16,20,30,0.62); pointer-events:auto;}
+  #tourHighlight{position:fixed; border-radius:14px; box-shadow:0 0 0 4px var(--gold), 0 0 0 9999px rgba(16,20,30,0.62); transition: all 0.28s ease; pointer-events:none;}
+  #tourCaption{position:fixed; max-width:300px; background:#fffaf0; border-radius:14px; padding:14px 16px; box-shadow:0 20px 50px -15px rgba(0,0,0,0.5); z-index:81; transition: all 0.28s ease;}
+  #tourCaptionText{margin:0; font-size:0.92rem; line-height:1.6; color:var(--indigo-900);}
   .modal-backdrop.fade-out{opacity:0;}
   .modal-card{background:#fffaf0; border-radius:16px; max-width:420px; width:100%; padding:28px 24px 24px; position:relative; text-align:center; box-shadow:0 24px 60px -20px rgba(0,0,0,0.5); max-height:88vh; overflow-y:auto;}
   .modal-close-x{position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; border:none; background:rgba(0,0,0,0.06); color:#8a7c5c; font-size:1.1rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;}
@@ -294,7 +300,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091511</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091601</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1728,11 +1734,72 @@ function locationLabel(position){
   if(position<=0) return '日本橋（出発前）';
   const exact = wpAt(position);
   if(exact && (exact.type==='station' || exact.type==='sidequest')) return (exact.icon?exact.icon+' ':'') + exact.name;
-  for(let p=position; p>=1; p--){
+  // 直前の宿場（または日本橋）からの実際のマス数を表示する
+  let basePos = 0, baseName = '日本橋';
+  for(let p=position-1; p>=1; p--){
     const w = wpAt(p);
-    if(w && (w.type==='station' || w.type==='sidequest')) return w.name + 'の少し先';
+    if(w && (w.type==='station' || w.type==='sidequest')){ basePos=p; baseName=w.name; break; }
   }
-  return '日本橋を出たところ';
+  return `${baseName}から${position-basePos}マス進む`;
+}
+
+// 遊び方の紙芝居（スポットライト）
+const TOUR_STEPS = [
+  {id:'tourDiceCol',        text:'ここを押すと、1日1回サイコロが振れます。街道を進みましょう！'},
+  {id:'tourClientBonusCol', text:'実際のお仕事で嬉しいことがあったら、ここから報告できます。追加でもう1回サイコロが振れます'},
+  {id:'tourHokkoriBonusCol',text:'ちょっとした嬉しい出来事も、ここで共有できます'},
+  {id:'tourCheerBonusCol',  text:'仲間の投稿に応援を送れます。応援された人は、ボーナスサイコロがもらえます'},
+  {id:'tourMapSection',     text:'宿場に着くと、先輩社労士からのメッセージが読めます'},
+  {id:'messagesPanel',      text:'個別に、仲間とメッセージのやり取りもできます'},
+];
+let TOUR_INDEX = 0;
+function startTour(){
+  TOUR_INDEX = 0;
+  const overlay = document.createElement('div');
+  overlay.id = 'tourOverlay';
+  overlay.innerHTML = `
+    <div id="tourHighlight"></div>
+    <div id="tourCaption">
+      <p id="tourCaptionText"></p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+        <span id="tourStepCount" style="font-size:0.8rem; color:#a99a72;"></span>
+        <button class="btn btn-main btn-small" id="tourNextBtn">次へ</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('tourNextBtn').onclick = ()=>{
+    TOUR_INDEX++;
+    if(TOUR_INDEX >= TOUR_STEPS.length){ endTour(); return; }
+    showTourStep();
+  };
+  showTourStep();
+}
+function endTour(){
+  const overlay = document.getElementById('tourOverlay');
+  if(overlay) overlay.remove();
+}
+function showTourStep(){
+  const step = TOUR_STEPS[TOUR_INDEX];
+  const target = document.getElementById(step.id);
+  const highlight = document.getElementById('tourHighlight');
+  const caption = document.getElementById('tourCaption');
+  if(!target || !highlight || !caption){ TOUR_INDEX++; if(TOUR_INDEX<TOUR_STEPS.length) showTourStep(); else endTour(); return; }
+  target.scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(()=>{
+    const r = target.getBoundingClientRect();
+    const pad = 8;
+    highlight.style.top = (r.top - pad) + 'px';
+    highlight.style.left = (r.left - pad) + 'px';
+    highlight.style.width = (r.width + pad*2) + 'px';
+    highlight.style.height = (r.height + pad*2) + 'px';
+    const captionTop = r.bottom + 16;
+    caption.style.top = Math.min(captionTop, window.innerHeight - 160) + 'px';
+    caption.style.left = Math.max(12, Math.min(r.left, window.innerWidth - 320)) + 'px';
+    document.getElementById('tourCaptionText').textContent = step.text;
+    document.getElementById('tourStepCount').textContent = `${TOUR_INDEX+1} / ${TOUR_STEPS.length}`;
+    document.getElementById('tourNextBtn').textContent = (TOUR_INDEX === TOUR_STEPS.length-1) ? '閉じる' : '次へ';
+  }, 260);
 }
 
 function renderGame(){
@@ -1787,6 +1854,7 @@ function renderGame(){
           <div class="status-label">現在地</div>
           <div class="status-value small">${atGoal ? '日光東照宮（ゴール！）' : locationLabel(PLAYER.position)}</div>
         </div>
+        <button class="btn btn-ghost btn-small" id="howToPlayBtn">📖 遊び方</button>
         <button class="btn btn-ghost btn-small" id="switchBtn">ログアウト／別のニックネームで参加</button>
       </div>
     </div>
@@ -1811,33 +1879,33 @@ function renderGame(){
         ・3カ月に1回程度、リアル会合（オープンサンドの会）があります。ぜひ積極的にご参加ください！
       </div>
       <div class="dice-3col">
-        <div class="dice-col">
+        <div class="dice-col" id="tourDiceCol">
           <div class="dice-col-label">本日のサイコロ</div>
           <button class="btn btn-main" id="rollMainBtn" ${(rolledToday || atGoal || phase==='after') ? 'disabled' : ''}>
             ${atGoal ? 'ゴール済み' : rolledToday ? '本日は振り済み' : phase==='after' ? '受付終了' : 'サイコロを振る'}
           </button>
           <div class="dice-msg" id="diceMsg">${atGoal ? '日光東照宮に到着しています。お疲れさまでした！' : rolledToday ? '明日また挑戦できます。' : ''}</div>
         </div>
-        <div class="dice-col">
-          <div class="dice-col-label">🤝 顧問先との共創スタートボーナス</div>
-          <div class="dice-col-desc">契約内容に応じて申告、サイコロ1回（1日1回まで）</div>
+        <div class="dice-col" id="tourClientBonusCol">
+          <div class="dice-col-label">🤝 顧問先との共創スタートボーナス<span class="info-toggle" data-target="descClient">？</span></div>
+          <div class="dice-col-desc collapsed" id="descClient">契約内容に応じて申告、サイコロ1回（1日1回まで）</div>
           <button class="btn btn-bonus" id="openClientBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('client'))?'disabled':''}>${usedBonusToday('client') ? '本日は申告済み' : '申告する'}</button>
         </div>
-        <div class="dice-col">
-          <div class="dice-col-label">☕ ほっこりボーナス</div>
-          <div class="dice-col-desc">うれしい出来事があったらサイコロ1回（1日1回まで）</div>
+        <div class="dice-col" id="tourHokkoriBonusCol">
+          <div class="dice-col-label">☕ ほっこりボーナス<span class="info-toggle" data-target="descHokkori">？</span></div>
+          <div class="dice-col-desc collapsed" id="descHokkori">うれしい出来事があったらサイコロ1回（1日1回まで）</div>
           <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('hokkori'))?'disabled':''}>${usedBonusToday('hokkori') ? '本日は申告済み' : '申告する'}</button>
         </div>
-        <div class="dice-col">
-          <div class="dice-col-label">🎉 仲間を祝福・応援ボーナス</div>
-          <div class="dice-col-desc">みんなの掲示板で応援してもらうと1件につきサイコロ1回</div>
+        <div class="dice-col" id="tourCheerBonusCol">
+          <div class="dice-col-label">🎉 仲間を祝福・応援ボーナス<span class="info-toggle" data-target="descCheer">？</span></div>
+          <div class="dice-col-desc collapsed" id="descCheer">みんなの掲示板で応援してもらうと1件につきサイコロ1回</div>
           <button class="btn btn-bonus" id="openCheerBonusBtn">仲間を祝福</button>
         </div>
       </div>
     </section>
     ` : ''}
 
-    <section class="panel">
+    <section class="panel" id="tourMapSection">
       <h2 class="panel-title">街道マップ <span class="tag">日本橋 → 21宿＋寄り道 → 日光</span></h2>
       <p class="panel-desc">ドラッグで盤面を動かせます。ホイール／ボタンで拡大縮小。パネルをタップすると宿場の説明が見られます。自分のコマは大きく光る輪と「👇あなた」で表示されます。</p>
       <div class="map-toolbar">
@@ -1956,6 +2024,21 @@ function renderGame(){
   `;
 
   document.getElementById('switchBtn').onclick = ()=>{ ME=null; PLAYER=null; clearLoginStorage(); renderJoin(); };
+  document.getElementById('howToPlayBtn').onclick = ()=> startTour();
+  document.querySelectorAll('.info-toggle').forEach(el=>{
+    el.onclick = ()=>{
+      const target = document.getElementById(el.dataset.target);
+      if(target) target.classList.toggle('collapsed');
+    };
+  });
+  // 初めてのログインの時だけ、自動で紙芝居を始める
+  try{
+    const seenKey = 'sugoroku_tour_seen_' + ME;
+    if(!localStorage.getItem(seenKey)){
+      localStorage.setItem(seenKey, '1');
+      setTimeout(()=> startTour(), 400);
+    }
+  }catch(e){}
   const msgPartnerSelect = document.getElementById('msgPartnerSelect');
   if(msgPartnerSelect) msgPartnerSelect.onchange = (e)=>{ MSG_PARTNER = e.target.value || null; renderGame(); };
   const msgSendBtn = document.getElementById('msgSendBtn');
