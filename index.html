@@ -301,7 +301,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091609</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091611</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1838,7 +1838,7 @@ function showTourStep(){
   target.scrollIntoView({behavior:'smooth', block:'center'});
   setTimeout(()=>{
     let r = target.getBoundingClientRect();
-    if(step.includeToken){
+    if(step.includeToken && PLAYER && PLAYER.position >= GOAL_POS){
       const tokenEl = document.getElementById('myTokenGroup');
       if(tokenEl){
         const tr = tokenEl.getBoundingClientRect();
@@ -1847,6 +1847,10 @@ function showTourStep(){
         r = {left, top, right, bottom, width: right-left, height: bottom-top};
       }
     }
+    // 対象が画面より縦に長い場合など、画面外にはみ出さないよう範囲を画面内に収める
+    const vLeft = Math.max(0, r.left), vTop = Math.max(0, r.top);
+    const vRight = Math.min(window.innerWidth, r.right), vBottom = Math.min(window.innerHeight, r.bottom);
+    r = {left: vLeft, top: vTop, right: vRight, bottom: vBottom, width: Math.max(0, vRight-vLeft), height: Math.max(0, vBottom-vTop)};
     const pad = 8;
     highlight.style.top = (r.top - pad) + 'px';
     highlight.style.left = (r.left - pad) + 'px';
