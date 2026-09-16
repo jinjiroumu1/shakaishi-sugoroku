@@ -256,6 +256,8 @@
   /* ---------- bulletin board ---------- */
   .board-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-height:420px; overflow-y:auto;}
   .board-item{background:var(--paper); border:1px solid var(--paper-line); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column;}
+  .board-item.client{background:rgba(40,69,122,0.07); border-left:4px solid var(--indigo-700);}
+  .board-item.hokkori{background:rgba(199,154,62,0.10); border-left:4px solid var(--gold);}
   .board-item-head{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;}
   .board-type-tag{font-size:0.64rem; font-weight:700; padding:2px 7px; border-radius:999px; color:#fff8ee;}
   .board-type-tag.client{background:var(--indigo-700);}
@@ -301,7 +303,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091613</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091615</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1770,7 +1772,7 @@ const TOUR_STEPS = [
   {id:'tourHokkoriBonusCol',text:'ちょっとした嬉しい出来事も、ここで共有できます'},
   {id:'tourCheerBonusCol',  text:'仲間の投稿に応援を送れます。応援された人は、ボーナスサイコロがもらえます'},
   {id:'tourFirstStation',   text:'宿場に着くと、先輩社労士からのメッセージが読めます', resetMap:true},
-  {id:'tourGoalPanel',      text:'ここが最終目的地、日光東照宮です。たどり着くとお祝いのメッセージが届きます！', resetMap:true, includeToken:true},
+  {id:'tourGoalPanel',      text:'ここが最終目的地、日光東照宮です。たどり着くとお祝いのメッセージが届きます！', resetMap:true, includeToken:true, bigPad:true},
   {id:'messagesPanel',      text:'個別に、仲間とメッセージのやり取りもできます'},
 ];
 function showRulesModal(){
@@ -1856,7 +1858,7 @@ function showTourStep(){
     const vLeft = Math.max(0, r.left), vTop = Math.max(0, r.top);
     const vRight = Math.min(window.innerWidth, r.right), vBottom = Math.min(vh(), r.bottom);
     r = {left: vLeft, top: vTop, right: vRight, bottom: vBottom, width: Math.max(0, vRight-vLeft), height: Math.max(0, vBottom-vTop)};
-    const pad = 28;
+    const pad = step.bigPad ? 90 : 28;
     highlight.style.top = (r.top - pad) + 'px';
     highlight.style.left = (r.left - pad) + 'px';
     highlight.style.width = (r.width + pad*2) + 'px';
@@ -1997,7 +1999,7 @@ function renderGame(){
           const safeTs = escapeHtml(p.timestamp||'');
           const safeNick = escapeHtml(p.nickname||'');
           return `
-          <div class="board-item">
+          <div class="board-item ${p.type==='client'?'client':'hokkori'}">
             <div class="board-item-head">
               <span class="board-type-tag ${p.type==='client'?'client':'hokkori'}">${p.type==='client' ? '🤝 共創スタート' : '☕ ほっこり'}</span>
               <span class="board-date">${toJstDisplay(p.timestamp)}</span>
