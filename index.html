@@ -300,7 +300,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091605</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091606</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -1917,17 +1917,17 @@ function renderGame(){
           <div class="dice-msg" id="diceMsg">${atGoal ? '日光東照宮に到着しています。お疲れさまでした！' : rolledToday ? '明日また挑戦できます。' : ''}</div>
         </div>
         <div class="dice-col" id="tourClientBonusCol">
-          <div class="dice-col-label">🤝 顧問先との共創スタートボーナス<span class="info-toggle" data-target="descClient">？</span></div>
+          <div class="dice-col-label">🤝 顧問先との共創スタートボーナス<span class="info-toggle" data-desc="descClient">？</span></div>
           <div class="dice-col-desc collapsed" id="descClient">契約内容に応じて申告、サイコロ1回（1日1回まで）</div>
           <button class="btn btn-bonus" id="openClientBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('client'))?'disabled':''}>${usedBonusToday('client') ? '本日は申告済み' : '申告する'}</button>
         </div>
         <div class="dice-col" id="tourHokkoriBonusCol">
-          <div class="dice-col-label">☕ ほっこりボーナス<span class="info-toggle" data-target="descHokkori">？</span></div>
+          <div class="dice-col-label">☕ ほっこりボーナス<span class="info-toggle" data-desc="descHokkori">？</span></div>
           <div class="dice-col-desc collapsed" id="descHokkori">うれしい出来事があったらサイコロ1回（1日1回まで）</div>
           <button class="btn btn-bonus" id="openHokkoriBonusBtn" ${(phase==='after'||atGoal||usedBonusToday('hokkori'))?'disabled':''}>${usedBonusToday('hokkori') ? '本日は申告済み' : '申告する'}</button>
         </div>
         <div class="dice-col" id="tourCheerBonusCol">
-          <div class="dice-col-label">🎉 仲間を祝福・応援ボーナス<span class="info-toggle" data-target="descCheer">？</span></div>
+          <div class="dice-col-label">🎉 仲間を祝福・応援ボーナス<span class="info-toggle" data-desc="descCheer">？</span></div>
           <div class="dice-col-desc collapsed" id="descCheer">みんなの掲示板で応援してもらうと1件につきサイコロ1回</div>
           <button class="btn btn-bonus" id="openCheerBonusBtn">仲間を祝福</button>
         </div>
@@ -2057,8 +2057,21 @@ function renderGame(){
   document.getElementById('howToPlayBtn').onclick = ()=> showRulesModal();
   document.querySelectorAll('.info-toggle').forEach(el=>{
     el.onclick = ()=>{
-      const target = document.getElementById(el.dataset.target);
-      if(target) target.classList.toggle('collapsed');
+      const descEl = document.getElementById(el.dataset.desc);
+      if(!descEl) return;
+      const labelText = el.parentElement.textContent.replace('？','').trim();
+      const div = document.createElement('div');
+      div.className = 'modal-backdrop';
+      div.innerHTML = `
+        <div class="modal-card">
+          <div class="stamp side">？</div>
+          <h3>${escapeHtml(labelText)}</h3>
+          <p class="quote">${escapeHtml(descEl.textContent)}</p>
+          <button class="btn btn-main" id="closeInfoModalBtn">閉じる</button>
+        </div>
+      `;
+      document.body.appendChild(div);
+      document.getElementById('closeInfoModalBtn').onclick = ()=> div.remove();
     };
   });
   // 初めてのログインの時、または ?tour=1 が付いている時は、自動で紙芝居を始める
