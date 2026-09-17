@@ -303,7 +303,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091620</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091621</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -2663,7 +2663,13 @@ if(API_URL === 'YOUR_APPS_SCRIPT_URL_HERE'){
     </div>`;
 } else {
   const urlParams = new URLSearchParams(window.location.search);
-  const inviteToken = urlParams.get('invite');
+  let inviteToken = urlParams.get('invite');
+  if(inviteToken){
+    // FBメッセンジャー等が、リンクの末尾に独自の文字列を付け足してしまうことがあるため、
+    // トークン本来の形式（英数字10文字）に該当する先頭部分だけを取り出す
+    const cleanMatch = inviteToken.match(/^[0-9a-zA-Z]+/);
+    inviteToken = cleanMatch ? cleanMatch[0].slice(0, 10) : inviteToken;
+  }
   const isAdmin = urlParams.get('admin') === 'invite';
   if(isAdmin){
     renderAdminInviteScreen();
