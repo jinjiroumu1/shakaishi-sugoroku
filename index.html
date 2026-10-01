@@ -69,6 +69,15 @@
   h2.panel-title{font-family:'Shippori Mincho', serif; font-size:1.05rem; margin:0 0 4px; color:var(--indigo-900); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   h2.panel-title .tag{font-size:0.65rem; background:var(--gold-soft); color:#6b5320; padding:2px 8px; border-radius:999px; font-family:'Zen Kaku Gothic New'; font-weight:700;}
   p.panel-desc{font-size:0.8rem; color:#7c7360; margin:0 0 14px;}
+  .essay-block{display:flex; flex-direction:column; gap:14px;}
+  .essay-section{background:var(--paper); border:1px solid var(--paper-line); border-radius:12px; padding:14px 16px;}
+  .essay-section h3{font-size:0.92rem; color:var(--indigo-900); margin:0 0 8px; font-family:'Shippori Mincho', serif; line-height:1.5;}
+  .essay-section p{font-size:0.85rem; line-height:1.85; color:#3c3528; margin:0 0 8px;}
+  .essay-section p:last-child{margin-bottom:0;}
+  .essay-flow{font-size:0.82rem; line-height:1.9; color:var(--indigo-800); background:#fffdf7; border:1px dashed var(--paper-line); border-radius:8px; padding:10px 12px; margin:8px 0;}
+  .essay-quote{background:rgba(199,154,62,0.14); border:1px solid rgba(199,154,62,0.4); border-radius:12px; padding:14px 16px; font-size:0.9rem; line-height:1.9; color:var(--indigo-900); font-weight:700;}
+  .essay-closing{font-size:0.85rem; line-height:1.85; color:#3c3528;}
+  .essay-closing p{margin:0 0 10px;}
   .dice-zone{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
   .dice-3col{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;}
   @media (max-width:720px){ .dice-3col{grid-template-columns:1fr;} }
@@ -303,7 +312,7 @@
 </style>
 </head>
 <body>
-<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v091801</div>
+<div id="buildVersionBadge" style="position:fixed; top:6px; right:8px; z-index:9999; background:rgba(40,69,122,0.85); color:#fff8ee; font-size:0.65rem; padding:3px 8px; border-radius:999px; font-family:monospace; letter-spacing:0.05em;">v100101</div>
 <div id="app"></div>
 <script>
 /* ============ 基本設定 ============ */
@@ -2034,7 +2043,66 @@ function renderGame(){
 
     <section class="panel">
       <h2 class="panel-title">💬 9月の共感資本事業部コメント</h2>
-      <p class="panel-desc">近日公開予定です。</p>
+      <p class="panel-desc">みなさんから寄せられた9月のコメントをまとめました。</p>
+      <div class="essay-block">
+        <div class="essay-section">
+          <p>このコメント群から読み取れるのは、「仕事の成果が増えた」というより、"人と人とのつながりが循環し、その循環の中から仕事・場・喜びが自然に立ち上がっている"ことだと思います。特に大切なことを、いくつかの層に分けてみます。</p>
+        </div>
+
+        <div class="essay-section">
+          <h3>1. 「仕事を取りに行く」から「ご縁が仕事を連れてくる」へ</h3>
+          <p>顧問契約、倫理研修、人事制度、AIDA研修、顧客紹介、就職希望者の紹介など、仕事につながる出来事がたくさん出ています。</p>
+          <p>ただし、その多くが、「営業して獲得した」ではなく、「誰かとの関係性の中から声がかかった」という形になっています。</p>
+          <p>税理士から顧客を紹介された／昨年の研修参加者から新しい研修の依頼が来た／顧問先から大企業の倫理研修の話が来た／スタッフのつくった資料が新しい契約につながった／先輩や仲間との関係から仕事が生まれた——</p>
+          <p>ここには、社会関係資本が仕事の機会を生み出している姿があります。つまり、「仕事→関係」だけではなく、関係→仕事→新しい関係→また仕事という循環が起きています。</p>
+        </div>
+
+        <div class="essay-section">
+          <h3>2. 「自分が成果を出す」から「仲間が活躍することが嬉しい」へ</h3>
+          <p>非常に印象的なのが、「カフェメンバーがAIのセミナー講師で活躍した。嬉しいなぁ。」「仲間が秋葉神社に出展マルシェに出てくれることに嬉しいなぁ。」という言葉です。</p>
+          <p>ここでは、成果の主体が「自分」から「仲間」に移っています。これはかなり重要で、自分の成果を最大化する組織から、他者の可能性が立ち上がることを喜べる組織への変化が見えます。「自分が活躍した」ではなく、「あの人が活躍している。嬉しい」となっている。これはまさに、遊ぶ力の中にある利他的な喜びや、場全体の生命力を感じる感覚に近いものだと思います。</p>
+        </div>
+
+        <div class="essay-section">
+          <h3>3. 「仕事」と「遊び」と「暮らし」の境界が溶けている</h3>
+          <p>このコメント群では、仕事・仲間・カフェ・マルシェ・ランチ・屋形船・雨上がりの青空・草木や鳥・出版講演会・地域のお店・顧問先の記念パーティーなどが、かなり自然につながっています。</p>
+          <p>たとえば、「制度が上手くいったら春に桜を屋形船で見に行こう！」という一文は象徴的です。「仕事が終わったら遊ぶ」ではなく、仕事のプロセスそのものに、遊びや人間らしい楽しみが入り込んでいる。</p>
+          <p>また、「田心カフェへ行ったら松本さん和久さんに会えてにこやかな一日のスタート」というコメントも、単なる「業務上の交流」ではありません。人と出会うこと自体が仕事のエネルギーになっている。</p>
+        </div>
+
+        <div class="essay-section">
+          <h3>4. 「5分だけ」が、数時間の没頭になる</h3>
+          <p>このコメントは、かなり象徴的です。「ぐうたらな自分がでてきそうになったが、5分だけと少し仕事をしたら集中して数時間たっていた！」</p>
+          <p>これは「意志の力で自分を管理した」という話とは少し違います。むしろ、小さな入口をつくったら、内側からエネルギーが立ち上がった、という話です。「やらなければ」から始めたのに、いつの間にか「やっている」。</p>
+          <p>これは、Being → Doing → Having の観点から見ると、とても興味深い現象です。Doingを無理やり起こすのではなく、ちょっとした行為からBeingが変わり、結果としてDoingが自然に続いている。</p>
+        </div>
+
+        <div class="essay-section">
+          <h3>5. 「嬉しい」「楽しい」「ほっこり」が、実は重要な成果になっている</h3>
+          <p>コメントには、嬉しい・楽しい・にこやか・ほっこり・気持ちいい・面白い・良い場だった・繋がりのありがたさ、温かさ、という言葉が非常に多いです。</p>
+          <p>普通の仕事の成果指標なら、「契約件数」「売上」「新規顧客」「研修受注」などを拾うでしょう。もちろん、それらも実際に起きています。でも、このコメント群で本当に特徴的なのは、成果の前にある感情や身体感覚が記録されていることです。</p>
+          <p>つまり、「何が達成されたか」だけではなく、「その過程で自分たちがどう生きていたか」が共有されています。これは「遊ぶ力」を測るうえで、とても大切な変化だと思います。</p>
+        </div>
+
+        <div class="essay-section">
+          <h3>6. 「一人の成果」が「場の成果」になっている</h3>
+          <p>全体を眺めると、一つ一つの出来事が孤立していません。</p>
+          <div class="essay-flow">研修をする → 誰かが参加する → その人から次の研修依頼が来る → 別の人とつながる → 仲間がイベントに出る → 顧客同士がつながる → 地域のお店にもポスターが貼られる → また新しい人が場に入ってくる</div>
+          <p>これは「個人の生産性」というより、場の生産性です。そして、場の生産性は単純な足し算ではなく、人 × 人 × 関係性 × 偶然 × 遊び によって増幅しているように見えます。</p>
+        </div>
+
+        <div class="essay-quote">
+          「頑張って成果を生み出す」から、「人と人との間に生まれた生命の循環から、成果が立ち上がってくる」へ。
+        </div>
+
+        <div class="essay-closing">
+          <p>この22個ほどのコメントを一言で集約するなら、上記のような変化ではないでしょうか。契約も、紹介も、研修も、マルシェも、仲間の活躍も、顧客との関係も、最初から「成果を取りに行った結果」だけではありません。</p>
+          <p>その手前に、人との出会い → 面白がる → 一緒にやってみる → 誰かが喜ぶ → また誰かとつながる → 新しい可能性が生まれる、という循環があります。</p>
+          <p>そして、この循環を支えているのが、「嬉しいなぁ」「面白いなぁ」「ほっこりする」「気持ちいい」「やってみよう」という、一見すると非合理に見える感覚なのだと思います。</p>
+          <p>だから、このコメント群から見えてくる「遊ぶ力」は、単に仕事を楽しくする力ではない。むしろ、人と人との間に余白をつくり、そこから思いもよらなかった関係や仕事や喜びを生み出していく力なのではないでしょうか。</p>
+          <p>そして、その意味では、今回のコメント群そのものが、「遊ぶ力が場に実装され始めている記録」になっているように感じます。</p>
+        </div>
+      </div>
     </section>
 
     <section class="panel" id="messagesPanel">
